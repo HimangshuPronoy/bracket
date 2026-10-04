@@ -13,6 +13,13 @@ export default function OrganizerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ registrations: 0, revenue: 0 });
 
+  const handlePublish = async (id: string) => {
+    const { error } = await supabase.from('tournaments').update({ status: 'registration_open' }).eq('id', id);
+    if (!error) {
+      setMyTournaments(prev => prev.map(t => t.id === id ? { ...t, registrationOpen: true } : t));
+    }
+  };
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -101,7 +108,7 @@ export default function OrganizerDashboardPage() {
           {/* KPI Cards */}
           <section>
             <h2 className="text-title mb-4">Performance Overview</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
               <div className="card" style={{ padding: 20 }}>
                 <div className="text-sm text-secondary mb-2" style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Tournaments</div>
                 <div className="text-display" style={{ fontSize: 40 }}>{myTournaments.length}</div>
@@ -128,6 +135,7 @@ export default function OrganizerDashboardPage() {
                   key={t.id}
                   style={{
                     display: 'flex',
+                    flexWrap: 'wrap',
                     alignItems: 'center',
                     padding: '24px',
                     borderBottom: i !== myTournaments.length - 1 ? '1px solid var(--border)' : 'none',
@@ -160,6 +168,15 @@ export default function OrganizerDashboardPage() {
                     >
                       View Tournament
                     </Link>
+                    {!t.registrationOpen && (
+                      <button 
+                        onClick={() => handlePublish(t.id)}
+                        className="btn btn-primary btn-sm"
+                        style={{ width: 140 }}
+                      >
+                        Publish 🚀
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

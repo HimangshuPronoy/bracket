@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
+import { createTournament } from '@/lib/api/tournament';
 
 const GAMES = [
   'Super Fighter V', 'Smash Bros. Ultimate', 'Fighter Z',
@@ -20,11 +20,6 @@ const FORMATS = [
   { value: 'swiss', label: 'Swiss' },
 ];
 
-function slugify(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60)
-    + '-' + Math.random().toString(36).slice(2, 7);
-}
-
 export default function CreateEventPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -34,9 +29,9 @@ export default function CreateEventPage() {
   const [game, setGame] = useState(GAMES[0]);
   const [customGame, setCustomGame] = useState('');
   const [isOnline, setIsOnline] = useState(true);
-  const [location, setLocation] = useState('');
+  const [locations, setLocations] = useState<string[]>(['']);
   const [startsAt, setStartsAt] = useState('');
-  const [fee, setFee] = useState('0');
+  const [tickets, setTickets] = useState<{name: string, price: string}[]>([{name: 'General Admission', price: '0'}]);
   const [prizePool, setPrizePool] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -63,112 +58,44 @@ export default function CreateEventPage() {
     e.preventDefault();
     if (!user) { setError('You must be logged in.'); return; }
     if (!name || !startsAt) { setError('Tournament name and start date are required.'); return; }
-    if (!isOnline && !location) { setError('Location is required for in-person events.'); return; }
+    if (!isOnline && (!locations || locations.length === 0 || !locations[0].trim())) { 
+      setError('Location is required for in-person events.'); 
+      return; 
+    }
 
     setLoading(true);
     setError('');
 
-    const finalGame = game === 'Other' ? customGame : game;
-    const dateObj = new Date(startsAt);
-    if (isNaN(dateObj.getTime())) {
-      setError('Invalid start date/time.');
-      setLoading(false);
-      return;
-    }
-
-    // 1. Upload banner if provided
-    let uploadedBannerUrl = bannerUrl;
-    if (bannerFile) {
-      const ext = bannerFile.name.split('.').pop();
-      const filename = `${user.id}/${Date.now()}_banner.${ext}`;
-      const { data: uploadData, error: uploadErr } = await supabase.storage
-        .from('tournament-banners')
-        .upload(filename, bannerFile);
-        
-      if (uploadErr) {
-        setError(`Failed to upload banner: ${uploadErr.message}`);
-        setLoading(false);
-        return;
-      }
-      
-      const { data: publicUrlData } = supabase.storage
-        .from('tournament-banners')
-        .getPublicUrl(uploadData.path);
-        
-      uploadedBannerUrl = publicUrlData.publicUrl;
-    }
-
-    // 1b. Upload thumbnail if provided
-    let uploadedThumbnailUrl = thumbnailUrl;
-    if (thumbnailFile) {
-      const ext = thumbnailFile.name.split('.').pop();
-      const filename = `${user.id}/${Date.now()}_thumb.${ext}`;
-      const { data: uploadData, error: uploadErr } = await supabase.storage
-        .from('tournament-banners')
-        .upload(filename, thumbnailFile);
-        
-      if (!uploadErr && uploadData) {
-        const { data: publicUrlData } = supabase.storage
-          .from('tournament-banners')
-          .getPublicUrl(uploadData.path);
-        uploadedThumbnailUrl = publicUrlData.publicUrl;
-      }
-    }
-
-    // 2. Create tournament
-    const { data: tournament, error: tErr } = await supabase
-      .from('tournaments')
-      .insert({
-        organizer_id: user.id,
+    try {
+      const finalGame = game === 'Other' ? customGame : game;
+      const tournament = await createTournament({
+        userId: user.id,
         name,
-        slug: slugify(name),
         game: finalGame,
-        is_online: isOnline,
-        location: isOnline ? null : location,
-        starts_at: dateObj.toISOString(),
-        registration_fee: parseFloat(fee) || 0,
-        prize_pool: prizePool || null,
-        banner_url: uploadedBannerUrl || null,
-        thumbnail_url: uploadedThumbnailUrl || null,
-        video_url: videoUrl || null,
-        description_md: description || null,
-        tags: isOnline ? ['Online'] : ['In-Person'],
-        status: 'registration_open',
-      })
-      .select()
-      .single();
+        isOnline,
+        locations,
+        startsAt,
+        tickets,
+        prizePool,
+        bannerFile,
+        bannerUrl,
+        thumbnailFile,
+        thumbnailUrl,
+        videoUrl,
+        description,
+        events: events.map(ev => ({ ...ev, maxEntrants: ev.maxEntrants || '' }))
+      });
 
-    if (tErr || !tournament) {
-      setError(tErr?.message ?? 'Failed to create tournament.');
+      router.push(`/tournament/${tournament.id}`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to create tournament.');
       setLoading(false);
-      return;
     }
-
-    // 2. Create events (if any are named)
-    const namedEvents = events.filter(ev => ev.name.trim());
-    if (namedEvents.length > 0) {
-      const { error: evErr } = await supabase.from('events').insert(
-        namedEvents.map(ev => ({
-          tournament_id: tournament.id,
-          name: ev.name,
-          format: ev.format,
-          max_entrants: ev.maxEntrants ? parseInt(ev.maxEntrants) : null,
-        }))
-      );
-      if (evErr) {
-        setError(`Tournament created but events failed: ${evErr.message}`);
-        setLoading(false);
-        return;
-      }
-    }
-
-    // Redirect to the tournament page
-    router.push(`/tournament/${tournament.id}`);
   };
 
   if (authLoading) {
     return (
-      <main className="container fade-in" style={{ paddingTop: 80, textAlign: 'center' }}>
+      <main className="container fade-in pt-8 pb-20 text-center">
         <p className="text-secondary">Loading...</p>
       </main>
     );
@@ -176,11 +103,11 @@ export default function CreateEventPage() {
 
   if (!user) {
     return (
-      <main className="container fade-in" style={{ paddingTop: 80, maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-        <h1 className="text-display" style={{ fontSize: 28, marginBottom: 12 }}>Sign in to create events</h1>
+      <main className="container fade-in pt-8 pb-20 max-w-md mx-auto text-center">
+        <div style={{ fontSize: 48 }} className="mb-4">🔒</div>
+        <h1 className="text-display mb-3" style={{ fontSize: 28 }}>Sign in to create events</h1>
         <p className="text-secondary mb-6">You need an account to organize tournaments.</p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24 }}>
+        <div className="flex justify-center gap-3 mt-6">
           <Link href="/login" className="btn btn-primary btn-lg">Log In</Link>
           <Link href="/signup" className="btn btn-secondary btn-lg">Sign Up</Link>
         </div>
@@ -189,8 +116,8 @@ export default function CreateEventPage() {
   }
 
   return (
-    <main className="container fade-in" style={{ paddingTop: 40, paddingBottom: 80, maxWidth: 800 }}>
-      <div className="page-hero" style={{ paddingBottom: 24 }}>
+    <main className="container fade-in pt-8 pb-20 max-w-lg mx-auto">
+      <div className="page-hero mb-6">
         <div className="section-tag">Organizer Tools</div>
         <h1 className="text-display">Create Tournament</h1>
         <p className="text-body text-secondary mt-3">
@@ -207,7 +134,7 @@ export default function CreateEventPage() {
       <form className="flex-col gap-6" onSubmit={handleSubmit}>
 
         {/* ── Tournament Info ── */}
-        <div className="card" style={{ padding: 32 }}>
+        <div className="card card-p32">
           <h2 className="text-title mb-6" style={{ fontSize: 20 }}>Tournament Info</h2>
           <div className="flex-col gap-4">
 
@@ -224,10 +151,9 @@ export default function CreateEventPage() {
               <div className="input-group">
                 <label className="input-label">Game *</label>
                 <select
-                  className="input"
+                  className="input select-input"
                   value={game}
                   onChange={e => setGame(e.target.value)}
-                  style={{ appearance: 'none' }}
                 >
                   {GAMES.map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
@@ -251,53 +177,99 @@ export default function CreateEventPage() {
               </div>
             </div>
 
-            <div className="grid-2">
-              <div className="input-group">
-                <label className="input-label">Location Type</label>
-                <select
-                  className="input"
-                  value={isOnline ? 'online' : 'in-person'}
-                  onChange={e => setIsOnline(e.target.value === 'online')}
-                  style={{ appearance: 'none' }}
-                >
-                  <option value="online">🌐 Online</option>
-                  <option value="in-person">📍 In-Person (Venue)</option>
-                </select>
-              </div>
-              {!isOnline && (
-                <div className="input-group">
-                  <label className="input-label">Venue / City *</label>
-                  <input
-                    type="text" className="input"
-                    placeholder="e.g. Arcade Bar, New York"
-                    value={location} onChange={e => setLocation(e.target.value)}
-                  />
-                </div>
-              )}
+            <div className="input-group">
+              <label className="input-label">Location Type</label>
+              <select
+                className="input select-input"
+                value={isOnline ? 'online' : 'in-person'}
+                onChange={e => setIsOnline(e.target.value === 'online')}
+              >
+                <option value="online">🌐 Online</option>
+                <option value="in-person">📍 In-Person (Venue/Tour)</option>
+              </select>
             </div>
-
-            <div className="grid-2">
+            {!isOnline && (
               <div className="input-group">
-                <label className="input-label">Entry Fee (USD)</label>
-                <input
-                  type="number" className="input"
-                  placeholder="0" min="0" step="0.01"
-                  value={fee} onChange={e => setFee(e.target.value)}
-                />
+                <div className="flex items-center justify-between">
+                  <label className="input-label">Locations / Venues *</label>
+                  <button type="button" onClick={() => setLocations([...locations, ''])} className="text-sm text-accent bg-transparent border-0 cursor-pointer">
+                    + Add Location
+                  </button>
+                </div>
+                {locations.map((loc, i) => (
+                  <div key={i} className="flex gap-2 mb-2">
+                    <input
+                      type="text" className="input"
+                      placeholder="e.g. Arcade Bar, New York"
+                      value={loc} onChange={e => {
+                        const newLocs = [...locations];
+                        newLocs[i] = e.target.value;
+                        setLocations(newLocs);
+                      }}
+                      required={i === 0}
+                    />
+                    {locations.length > 1 && (
+                      <button type="button" onClick={() => setLocations(locations.filter((_, idx) => idx !== i))} className="btn btn-ghost px-3 text-danger">✕</button>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="input-group">
-                <label className="input-label">Prize Pool</label>
-                <input
-                  type="text" className="input"
-                  placeholder="e.g. $5,000"
-                  value={prizePool} onChange={e => setPrizePool(e.target.value)}
-                />
+            )}
+
+            <div className="input-group border-t pt-8 mt-2">
+              <div className="flex justify-between items-center mb-3">
+                <label className="input-label mb-0">Ticket Tiers</label>
+                <button type="button" onClick={() => setTickets([...tickets, { name: '', price: '0' }])} className="text-sm text-accent bg-transparent border-0 cursor-pointer">
+                  + Add Ticket Tier
+                </button>
+              </div>
+              
+              <div className="flex-col gap-3">
+                {tickets.map((ticket, i) => (
+                  <div key={i} className="flex gap-3 items-center">
+                    <input
+                      type="text" className="input" style={{ flex: 2 }}
+                      placeholder="e.g. Day 1 Pass"
+                      value={ticket.name} onChange={e => {
+                        const newT = [...tickets];
+                        newT[i].name = e.target.value;
+                        setTickets(newT);
+                      }}
+                      required
+                    />
+                    <div className="relative flex-1">
+                      <span style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-secondary)' }}>$</span>
+                      <input
+                        type="number" className="input" style={{ paddingLeft: 24 }}
+                        placeholder="0" min="0" step="0.01"
+                        value={ticket.price} onChange={e => {
+                          const newT = [...tickets];
+                          newT[i].price = e.target.value;
+                          setTickets(newT);
+                        }}
+                        required
+                      />
+                    </div>
+                    {tickets.length > 1 && (
+                      <button type="button" onClick={() => setTickets(tickets.filter((_, idx) => idx !== i))} className="btn btn-ghost px-3 text-danger">✕</button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="input-group">
+              <label className="input-label">Prize Pool</label>
+              <input
+                type="text" className="input"
+                placeholder="e.g. $5,000"
+                value={prizePool} onChange={e => setPrizePool(e.target.value)}
+              />
+            </div>
+
+            <div className="input-group">
               <label className="input-label">Thumbnail Image (Square - Upload or URL)</label>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div className="flex gap-3 items-center">
                 <input
                   type="file"
                   accept="image/*"
@@ -325,13 +297,13 @@ export default function CreateEventPage() {
                 />
               </div>
               {thumbnailPreview && (
-                <img src={thumbnailPreview} alt="Thumbnail preview" style={{ marginTop: 12, width: 100, height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                <img src={thumbnailPreview} alt="Thumbnail preview" className="img-thumb-preview mt-3" />
               )}
             </div>
 
             <div className="input-group">
               <label className="input-label">Banner Image (Upload or URL)</label>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div className="flex gap-3 items-center">
                 <input
                   type="file"
                   accept="image/*"
@@ -359,7 +331,7 @@ export default function CreateEventPage() {
                 />
               </div>
               {bannerPreview && (
-                <img src={bannerPreview} alt="Banner preview" style={{ marginTop: 12, width: '100%', height: 160, objectFit: 'cover', borderRadius: 8 }} />
+                <img src={bannerPreview} alt="Banner preview" className="img-banner-preview mt-3" />
               )}
             </div>
 
@@ -386,8 +358,8 @@ export default function CreateEventPage() {
         </div>
 
         {/* ── Events ── */}
-        <div className="card" style={{ padding: 32 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div className="card card-p32">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-title" style={{ fontSize: 20 }}>Events</h2>
             <button type="button" className="btn btn-secondary btn-sm" onClick={addEvent}>
               + Add Event
@@ -395,13 +367,13 @@ export default function CreateEventPage() {
           </div>
           <div className="flex-col gap-4">
             {events.map((ev, i) => (
-              <div key={i} className="card" style={{ padding: 20, background: 'var(--bg-elevated)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div key={i} className="card card-p24 bg-elevated">
+                <div className="flex items-center justify-between mb-4">
                   <span className="text-sm text-secondary" style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Event {i + 1}
                   </span>
                   {events.length > 1 && (
-                    <button type="button" onClick={() => removeEvent(i)} style={{ background: 'none', border: 'none', color: 'var(--destructive)', cursor: 'pointer', fontSize: 18 }}>
+                    <button type="button" onClick={() => removeEvent(i)} className="text-danger" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>
                       ✕
                     </button>
                   )}
@@ -418,10 +390,9 @@ export default function CreateEventPage() {
                   <div className="input-group">
                     <label className="input-label">Format</label>
                     <select
-                      className="input"
+                      className="input select-input"
                       value={ev.format}
                       onChange={e => updateEvent(i, 'format', e.target.value)}
-                      style={{ appearance: 'none' }}
                     >
                       {FORMATS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                     </select>
@@ -441,7 +412,7 @@ export default function CreateEventPage() {
         </div>
 
         {/* ── Actions ── */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+        <div className="flex justify-end gap-3">
           <Link href="/organizer" className="btn btn-ghost">Cancel</Link>
           <button
             type="submit"

@@ -1,116 +1,87 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 export const metadata: Metadata = {
   title: 'Rankings — Bracket',
   description: 'Global player leaderboards and rankings.',
 };
 
-// Mock leaderboard cards
-const leaderboards = [
-  {
-    id: 'ultrank',
-    title: 'UltRank',
-    subtitle: 'Half Year 2026',
-    imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop',
-    totalPlayers: 110,
-    players: [
-      { rank: 1, team: 'ZETA', name: 'acola', country: '🇯🇵' },
-      { rank: 2, team: 'AREA3...', name: 'Doraright', country: '🇯🇵' },
-      { rank: 3, team: 'E36', name: 'Hurt', country: '🇯🇵' },
-      { rank: 4, team: '', name: 'Sonix', country: '🇺🇸' },
-      { rank: 5, team: 'CTG', name: 'Zomba', country: '🇺🇸' },
-      { rank: 6, team: 'FENNEL', name: 'Miya', country: '🇯🇵' },
-      { rank: 7, team: '', name: 'Carmelo', country: '🇯🇵' },
-    ]
-  },
-  {
-    id: 'ssbmrank',
-    title: 'SSBMRank',
-    subtitle: 'Summer 2026',
-    imageUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop',
-    totalPlayers: 100,
-    players: [
-      { rank: 1, team: 'SR', name: 'Zain', country: '🇺🇸' },
-      { rank: 2, team: 'Envy', name: 'Wizzrobe', country: '🇺🇸' },
-      { rank: 3, team: 'Liq...', name: 'Hungrybox', country: '🇺🇸' },
-      { rank: 4, team: 'SR', name: 'moky', country: '🇨🇦' },
-      { rank: 5, team: 'SR', name: 'Joshman', country: '🇦🇺' },
-      { rank: 6, team: 'Eggdog', name: 'Salt', country: '🇺🇸' },
-      { rank: 7, team: 'L...', name: 'RapMonster', country: '🇺🇸' },
-    ]
-  },
-  {
-    id: 'sf6rank',
-    title: 'Fighter V Global',
-    subtitle: 'Season 2026',
-    imageUrl: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=800&auto=format&fit=crop',
-    totalPlayers: 150,
-    players: [
-      { rank: 1, team: 'RB', name: 'Daigo', country: '🇯🇵' },
-      { rank: 2, team: 'FLY', name: 'Punk', country: '🇺🇸' },
-      { rank: 3, team: 'ROHTO', name: 'Tokido', country: '🇯🇵' },
-      { rank: 4, team: 'NASR', name: 'AngryBird', country: '🇦🇪' },
-      { rank: 5, team: 'NASR', name: 'BigBird', country: '🇦🇪' },
-      { rank: 6, team: 'MOUZ', name: 'EndingWalker', country: '🇬🇧' },
-      { rank: 7, team: 'RC', name: 'MenaRD', country: '🇩🇴' },
-    ]
-  },
-  {
-    id: 'tekkenrank',
-    title: 'Iron Fist Circuit',
-    subtitle: 'World Tour 2026',
-    imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=800&auto=format&fit=crop',
-    totalPlayers: 120,
-    players: [
-      { rank: 1, team: 'DRX', name: 'Knee', country: '🇰🇷' },
-      { rank: 2, team: 'FATE', name: 'Arslan Ash', country: '🇵🇰' },
-      { rank: 3, team: 'KDF', name: 'Meo-IL', country: '🇰🇷' },
-      { rank: 4, team: 'RB', name: 'Anakin', country: '🇺🇸' },
-      { rank: 5, team: 'THY', name: 'Chikurin', country: '🇯🇵' },
-      { rank: 6, team: 'T1', name: 'JDCR', country: '🇰🇷' },
-      { rank: 7, team: 'GL', name: 'Super Akouma', country: '🇫🇷' },
-    ]
-  }
-];
+export const revalidate = 0;
 
-export default function RankingsPage() {
+export default async function RankingsPage() {
+  // Fetch real rankings from the database
+  const { data: rankingsData } = await supabase
+    .from('rankings')
+    .select(`
+      user_id,
+      wins,
+      tournaments ( game ),
+      profiles ( display_name, handle )
+    `);
+
+  // Group by game
+  const gamesMap = new Map<string, Map<string, { name: string; wins: number }>>();
+  
+  if (rankingsData) {
+    rankingsData.forEach((row: any) => {
+      const game = row.tournaments?.game;
+      if (!game) return;
+      const userId = row.user_id;
+      const name = row.profiles?.display_name || row.profiles?.handle || 'Unknown Player';
+      
+      if (!gamesMap.has(game)) gamesMap.set(game, new Map());
+      const playersMap = gamesMap.get(game)!;
+      
+      const current = playersMap.get(userId) || { name, wins: 0 };
+      current.wins += (row.wins || 0);
+      playersMap.set(userId, current);
+    });
+  }
+
+  // Convert to leaderboards array
+  const leaderboards = Array.from(gamesMap.entries()).map(([game, playersMap], index) => {
+    const players = Array.from(playersMap.values())
+      .sort((a, b) => b.wins - a.wins)
+      .map((p, i) => ({
+        rank: i + 1,
+        team: '',
+        name: p.name,
+        country: '🏳️', // Or fetch from profile if added
+        wins: p.wins
+      }));
+
+    return {
+      id: game.toLowerCase().replace(/\\s+/g, '-'),
+      title: `${game} Global`,
+      subtitle: 'Current Standings',
+      imageUrl: index % 2 === 0 
+        ? 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop'
+        : 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop',
+      totalPlayers: players.length,
+      players
+    };
+  });
   return (
     <main className="container fade-in" style={{ paddingTop: 32, paddingBottom: 80 }}>
       
-      {/* ── Filter Toolbar ────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-        <div className="topbar-search" style={{ margin: 0, background: 'var(--bg-elevated)' }}>
-          <span style={{ opacity: 0.5 }}>🔍</span>
-          <input type="text" placeholder="Search rankings" />
-        </div>
-        
-        <button className="btn btn-secondary btn-sm" style={{ height: 40, background: 'var(--bg-elevated)' }}>
-          Location ⌄
-        </button>
-        <button className="btn btn-secondary btn-sm" style={{ height: 40, background: 'var(--bg-elevated)' }}>
-          Filters ⌄
-        </button>
-        <button className="btn btn-secondary btn-sm" style={{ height: 40, background: 'var(--bg-elevated)' }}>
-          Choose your game ⌄
-        </button>
-        
-        <button className="btn btn-primary" style={{ height: 40, background: '#3B75DF', color: '#fff', borderColor: '#3B75DF' }}>
-          Create ranking
-        </button>
-      </div>
-      
-      {/* Active filters pill */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
-        <div className="badge badge-neutral" style={{ padding: '6px 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
-          Past Year <span style={{ cursor: 'pointer', opacity: 0.6 }}>✖</span>
-        </div>
+      <div style={{ marginBottom: 32 }}>
+        <h1 className="text-display">Global Rankings</h1>
+        <p className="text-secondary text-body mt-2">See how players stack up based on total tournament wins.</p>
       </div>
 
-      {/* ── Rankings Grid ─────────────────────────────────────── */}
-      <div className="grid-2">
-        {leaderboards.map(board => (
-          <div key={board.id} className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
+      {leaderboards.length === 0 ? (
+        <div className="card empty-state" style={{ padding: 64, textAlign: 'center', marginTop: 32 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🏆</div>
+          <h2 className="text-display" style={{ fontSize: 24, marginBottom: 8 }}>No Rankings Yet</h2>
+          <p className="text-body text-secondary" style={{ maxWidth: 400, margin: '0 auto' }}>
+            There are no match results recorded in the database yet. Once players start winning tournaments, they will appear here!
+          </p>
+        </div>
+      ) : (
+        <div className="grid-2">
+          {leaderboards.map(board => (
+            <div key={board.id} className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
             
             {/* Hero Image Header */}
             <div style={{ position: 'relative', height: 180, width: '100%' }}>
@@ -201,6 +172,7 @@ export default function RankingsPage() {
           </div>
         ))}
       </div>
+      )}
 
     </main>
   );

@@ -8,29 +8,45 @@ export const metadata: Metadata = {
   description: 'Browse and register for upcoming esports tournaments.',
 };
 
+export const revalidate = 0;
+
 export default async function DiscoverPage() {
-  const { data: rawTournaments } = await supabase
+  const { data: rawTournaments, error } = await supabase
     .from('tournaments')
-    .select(`
-      *,
-      organizer:profiles ( display_name, handle )
-    `)
+    .select('*')
     .order('starts_at', { ascending: true })
     .limit(20);
 
-  const mappedTournaments = (rawTournaments || []).map((t: any) => ({
-    id: t.id,
-    name: t.name,
-    game: t.game,
-    date: new Date(t.starts_at).toLocaleDateString(),
-    location: t.location || 'TBA',
-    isOnline: t.is_online,
-    registrationFee: t.registration_fee,
-    prizePool: t.prize_pool,
-    entrantsCount: 0,
-    imageUrl: t.banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2940&auto=format&fit=crop',
-    organizerName: t.organizer?.display_name || t.organizer?.handle || 'Unknown Organizer',
-  }));
+  if (error) {
+    console.error('Error fetching tournaments:', error);
+  }
+
+  let profiles: any[] = [];
+  if (rawTournaments && rawTournaments.length > 0) {
+    const organizerIds = Array.from(new Set(rawTournaments.map(t => t.organizer_id)));
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('id, display_name, handle')
+      .in('id', organizerIds);
+    if (profileData) profiles = profileData;
+  }
+
+  const mappedTournaments = (rawTournaments || []).map((t: any) => {
+    const org = profiles.find(p => p.id === t.organizer_id);
+    return {
+      id: t.id,
+      name: t.name,
+      game: t.game,
+      date: new Date(t.starts_at).toLocaleDateString(),
+      location: t.location || 'TBA',
+      isOnline: t.is_online,
+      registrationFee: t.registration_fee,
+      prizePool: t.prize_pool,
+      entrantsCount: 0,
+      imageUrl: t.banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2940&auto=format&fit=crop',
+      organizerName: org?.display_name || org?.handle || 'Unknown Organizer',
+    };
+  });
 
   const trending = mappedTournaments.slice(0, 6);
   const fightingGames = mappedTournaments.filter((t: any) => t.game.includes('Fighter') || t.game.includes('Bros') || t.game.includes('Smash') || t.game.includes('Tekken')).slice(0, 6);
@@ -67,9 +83,26 @@ export default async function DiscoverPage() {
       )}
 
       <div className="flex-col gap-8">
-        <Carousel title="🔥 Trending Right Now" tournaments={trending} />
-        <Carousel title="🥊 Fighting Games" tournaments={fightingGames} />
-        <Carousel title="🔫 Tactical Shooters" tournaments={shooters} />
+        {mappedTournaments.length === 0 ? (
+          <div className="card empty-state" style={{ padding: 64, textAlign: 'center', marginTop: 48 }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🌍</div>
+            <h2 className="text-display" style={{ fontSize: 24, marginBottom: 8 }}>No Public Tournaments Found</h2>
+            <p className="text-body text-secondary" style={{ maxWidth: 400, margin: '0 auto' }}>
+              There are no published tournaments right now. If you've created one on mobile, it might still be in "Draft" status!
+            </p>
+          </div>
+        ) : (
+          <>
+            {trending.length > 0 && <Carousel title="🔥 Trending Right Now" tournaments={trending} />}
+            {fightingGames.length > 0 && <Carousel title="🥊 Fighting Games" tournaments={fightingGames} />}
+            {shooters.length > 0 && <Carousel title="🔫 Tactical Shooters" tournaments={shooters} />}
+            
+            {/* Catch-all for other games if they don't fit the above filters */}
+            {mappedTournaments.length > 0 && trending.length === 0 && fightingGames.length === 0 && shooters.length === 0 && (
+              <Carousel title="🎮 All Tournaments" tournaments={mappedTournaments} />
+            )}
+          </>
+        )}
       </div>
     </main>
   );

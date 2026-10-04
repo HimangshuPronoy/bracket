@@ -47,7 +47,7 @@ export default function Carousel({ title, tournaments }: Props) {
               disabled={!canScrollLeft}
               style={{ 
                 width: 32, height: 32, borderRadius: 'var(--radius-md)', 
-                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: canScrollLeft ? 'pointer' : 'default', opacity: canScrollLeft ? 1 : 0.3
               }}
@@ -59,7 +59,7 @@ export default function Carousel({ title, tournaments }: Props) {
               disabled={!canScrollRight}
               style={{ 
                 width: 32, height: 32, borderRadius: 'var(--radius-md)', 
-                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: canScrollRight ? 'pointer' : 'default', opacity: canScrollRight ? 1 : 0.3
               }}
