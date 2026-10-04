@@ -866,7 +866,8 @@ label.event-checkbox.selected .checkbox-mark { border-color: var(--accent); back
     bottom: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    height: 72px !important;
+    height: auto !important;
+    min-height: 72px !important;
     border-radius: 0 !important;
     border: none !important;
     border-top: 1px solid var(--border) !important;
@@ -877,6 +878,7 @@ label.event-checkbox.selected .checkbox-mark { border-color: var(--accent); back
     background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    padding-bottom: env(safe-area-inset-bottom) !important;
   }
   
   .sidebar-logo, .sidebar > div:last-child {
@@ -890,13 +892,15 @@ label.event-checkbox.selected .checkbox-mark { border-color: var(--accent); back
   }
   .sidebar-link {
     flex-direction: column !important;
-    gap: 4px !important;
+    gap: 2px !important;
     font-size: 11px !important;
-    padding: 8px !important;
+    padding: 8px 4px !important;
     background: transparent !important;
+    flex: 1 !important;
   }
-  .sidebar-link span {
-    font-size: 20px !important;
+  .sidebar-link svg {
+    width: 20px !important;
+    height: 20px !important;
   }
   .sidebar-link.active {
     color: var(--accent) !important;
