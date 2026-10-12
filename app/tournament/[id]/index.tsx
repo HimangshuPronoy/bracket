@@ -13,6 +13,16 @@ import { useAuth } from '../../../src/features/auth/AuthContext';
 
 const { width } = Dimensions.get('window');
 
+function InfoPill({ emoji, label, value, highlight }: { emoji: string; label: string; value: string; highlight?: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.infoPill, { backgroundColor: colors.background }]}>
+      <Text variant="caption" color="secondaryLabel">{emoji} {label}</Text>
+      <Text variant="footnote" style={{ fontWeight: '700', color: highlight ?? colors.label }}>{value}</Text>
+    </View>
+  );
+}
+
 export default function TournamentDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { spacing, colors, radii } = useTheme();
@@ -75,13 +85,6 @@ export default function TournamentDetailsScreen() {
       </Screen>
     );
   }
-
-  const InfoPill = ({ emoji, label, value, highlight }: { emoji: string; label: string; value: string; highlight?: string }) => (
-    <View style={[styles.infoPill, { backgroundColor: colors.background }]}>
-      <Text variant="caption" color="secondaryLabel">{emoji} {label}</Text>
-      <Text variant="footnote" style={{ fontWeight: '700', color: highlight ?? colors.label }}>{value}</Text>
-    </View>
-  );
 
   return (
     <Screen backgroundColor="backgroundGrouped">
@@ -164,11 +167,17 @@ export default function TournamentDetailsScreen() {
                 </View>
               </View>
               <Button
-                label="Cancel Registration"
+                label="Change Events"
+                variant="secondary"
+                onPress={() => router.push(`/tournament/${tournament.id}/register`)}
+                style={{ marginTop: spacing.m }}
+              />
+              <Button
+                label="Withdraw / Cancel Registration"
                 variant="destructive"
                 onPress={handleCancelRegistration}
                 loading={cancelMutation.isPending}
-                style={{ marginTop: spacing.m }}
+                style={{ marginTop: spacing.s }}
               />
             </Card>
           ) : (

@@ -135,11 +135,11 @@ returns trigger language plpgsql security definer as $$
 begin
   if TG_OP = 'INSERT' then
     update public.events
-    set entrants_count = entrants_count + cardinality(new.event_ids)
+    set entrants_count = entrants_count + 1
     where id = any(new.event_ids);
   elsif TG_OP = 'DELETE' then
     update public.events
-    set entrants_count = greatest(0, entrants_count - cardinality(old.event_ids))
+    set entrants_count = greatest(0, entrants_count - 1)
     where id = any(old.event_ids);
   elsif TG_OP = 'UPDATE' then
     -- Decrement for removed events

@@ -7,13 +7,13 @@ import { SymbolView } from 'expo-symbols';
 import { useTranslation } from 'react-i18next';
 import { BlurView } from 'expo-blur';
 import { useTournament } from '../../../src/hooks/useTournaments';
-import { useRegisterForTournament, useRegistrationForTournament } from '../../../src/hooks/useRegistrations';
+import { useRegisterForTournament, useRegistrationForTournament, useCancelRegistration } from '../../../src/hooks/useRegistrations';
 import { useAuth } from '../../../src/features/auth/AuthContext';
 import type { Event } from '../../../src/lib/database.types';
 
 export default function TournamentRegisterScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { spacing, colors, radii, shadows } = useTheme();
+  const { spacing, colors, radii } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -21,9 +21,20 @@ export default function TournamentRegisterScreen() {
   const { data: tournament, isLoading: tournamentLoading } = useTournament(id ?? null);
   const { data: existingReg } = useRegistrationForTournament(user?.id ?? null, id ?? null);
   const registerMutation = useRegisterForTournament();
+  const cancelMutation = useCancelRegistration();
 
   const events = tournament?.events ?? [];
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+  const hasInitialized = React.useRef(false);
+
+  React.useEffect(() => {
+    if (existingReg && !hasInitialized.current) {
+      hasInitialized.current = true;
+      if (Array.isArray(existingReg.event_ids)) {
+        queueMicrotask(() => setSelectedEvents(existingReg.event_ids));
+      }
+    }
+  }, [existingReg]);
 
   if (tournamentLoading) {
     return (
@@ -44,6 +55,33 @@ export default function TournamentRegisterScreen() {
   const toggleEvent = (eventId: string) => {
     setSelectedEvents((prev) =>
       prev.includes(eventId) ? prev.filter((e) => e !== eventId) : [...prev, eventId]
+    );
+  };
+
+  const handleWithdraw = () => {
+    if (!existingReg || !user) return;
+    Alert.alert(
+      'Withdraw Registration',
+      'Are you sure you want to withdraw from this tournament? Your registration in all events will be cancelled.',
+      [
+        { text: 'Keep Registration', style: 'cancel' },
+        {
+          text: 'Withdraw',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await cancelMutation.mutateAsync({
+                registrationId: existingReg.id,
+                userId: user.id,
+                tournamentId: tournament!.id,
+              });
+              router.replace(`/tournament/${tournament!.id}`);
+            } catch (e: any) {
+              Alert.alert('Withdrawal failed', e.message);
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -151,14 +189,25 @@ export default function TournamentRegisterScreen() {
             label={
               selectedEvents.length === 0
                 ? t('register.selectEvents')
-                : tournament.registration_fee === 0
-                  ? `${t('register.completeRegistration')} — Free`
-                  : `${t('register.completeRegistration')} — $${totalFee}`
+                : existingReg?.status === 'confirmed'
+                  ? 'Update Registration'
+                  : tournament.registration_fee === 0
+                    ? `${t('register.completeRegistration')} — Free`
+                    : `${t('register.completeRegistration')} — $${totalFee}`
             }
             onPress={handleRegister}
             disabled={selectedEvents.length === 0}
             loading={registerMutation.isPending}
           />
+
+          {existingReg?.status === 'confirmed' && (
+            <Button
+              label="Withdraw from Tournament"
+              variant="destructive"
+              onPress={handleWithdraw}
+              loading={cancelMutation.isPending}
+            />
+          )}
 
           <Button
             label="Cancel"

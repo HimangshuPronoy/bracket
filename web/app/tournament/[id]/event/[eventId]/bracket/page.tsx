@@ -42,31 +42,45 @@ export default function BracketPage({ params }: Props) {
         // No bracket yet — seed from confirmed registrations
         const { data: regs } = await supabase
           .from('registrations')
-          .select('user_id, event_ids, profiles(display_name, handle)')
+          .select('user_id, event_ids')
           .eq('tournament_id', id)
           .eq('status', 'confirmed');
 
         const eventRegs = (regs || []).filter((r: any) => r.event_ids.includes(eventId));
+        const userIds = Array.from(new Set(eventRegs.map((r: any) => r.user_id)));
+        const profilesMap = new Map<string, { display_name: string; handle: string }>();
 
-        const entrants = eventRegs.map((r: any, idx: number) => ({
-          id: (r.profiles as any)?.display_name || (r.profiles as any)?.handle || r.user_id,
-          seed: idx + 1,
-        }));
-
-        const seedList = entrants.length > 0
-          ? entrants.slice(0, eData?.max_entrants ?? 64)
-          : Array.from({ length: 8 }, (_, i) => ({ id: `Player ${i + 1}`, seed: i + 1 }));
-
-        let generated: StageState;
-        if (eData?.format === 'double_elim') {
-          generated = generateDoubleElim(seedList);
-        } else if (eData?.format === 'round_robin') {
-          generated = generateRoundRobin(seedList);
-        } else {
-          generated = generateSingleElim(seedList);
+        if (userIds.length > 0) {
+          const { data: pData } = await supabase
+            .from('profiles')
+            .select('id, display_name, handle')
+            .in('id', userIds);
+          (pData || []).forEach((p: any) => profilesMap.set(p.id, p));
         }
 
-        setStage(generated);
+        const entrants = eventRegs.map((r: any, idx: number) => {
+          const p = profilesMap.get(r.user_id);
+          const displayName = p?.display_name || p?.handle || `Player ${idx + 1}`;
+          return {
+            id: displayName,
+            seed: idx + 1,
+          };
+        });
+
+        if (entrants.length >= 2) {
+          const seedList = entrants.slice(0, eData?.max_entrants ?? 64);
+          let generated: StageState;
+          if (eData?.format === 'double_elim') {
+            generated = generateDoubleElim(seedList);
+          } else if (eData?.format === 'round_robin') {
+            generated = generateRoundRobin(seedList);
+          } else {
+            generated = generateSingleElim(seedList);
+          }
+          setStage(generated);
+        } else {
+          setStage(null);
+        }
       }
       setLoading(false);
     }
@@ -95,11 +109,60 @@ export default function BracketPage({ params }: Props) {
 
   const saveStage = async (newStage: StageState) => {
     setIsSaving(true);
-    await supabase
-      .from('events')
-      .update({ stage_data: newStage as any, status: newStage.status })
-      .eq('id', eventId);
-    setIsSaving(false);
+    try {
+      await supabase
+        .from('events')
+        .update({ stage_data: newStage as any, status: newStage.status })
+        .eq('id', eventId);
+
+      // If bracket has completed, persist rankings to database
+      if (newStage.status === 'completed') {
+        const standings = computeStandings(newStage);
+
+        // Fetch user IDs for entrants to record rankings
+        const { data: regs } = await supabase
+          .from('registrations')
+          .select('user_id, event_ids')
+          .eq('tournament_id', id)
+          .eq('status', 'confirmed');
+
+        const eventRegs = (regs || []).filter((r: any) => r.event_ids.includes(eventId));
+        const userIds = Array.from(new Set(eventRegs.map((r: any) => r.user_id)));
+        const { data: pData } = await supabase
+          .from('profiles')
+          .select('id, display_name, handle')
+          .in('id', userIds);
+
+        const nameToUserId = new Map<string, string>();
+        (pData || []).forEach((p: any) => {
+          if (p.display_name) nameToUserId.set(p.display_name, p.id);
+          if (p.handle) nameToUserId.set(p.handle, p.id);
+        });
+
+        const rankingRows = standings
+          .map(s => {
+            const matchedUserId = nameToUserId.get(s.entrantId) || (s.entrantId.length > 20 ? s.entrantId : null);
+            if (!matchedUserId) return null;
+            return {
+              user_id: matchedUserId,
+              tournament_id: id,
+              event_id: eventId,
+              placement: s.place,
+              wins: s.wins,
+              losses: s.losses,
+            };
+          })
+          .filter((r): r is { user_id: string; tournament_id: string; event_id: string; placement: number; wins: number; losses: number; } => r !== null);
+
+        if (rankingRows.length > 0) {
+          await supabase.from('rankings').upsert(rankingRows, { onConflict: 'user_id,event_id' });
+        }
+      }
+    } catch (e) {
+      console.error('Error saving stage:', e);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleMatchClick = (match: Match) => {
@@ -133,7 +196,7 @@ export default function BracketPage({ params }: Props) {
 
   const getName = (entrantId: string | null) => entrantId ?? 'TBD';
 
-  if (loading || !stage) {
+  if (loading) {
     return (
       <main className="fade-in container" style={{ padding: 40, textAlign: 'center' }}>
         <div className="spinner" style={{ margin: '0 auto 16px', width: 32, height: 32, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite' }} />
@@ -149,6 +212,7 @@ export default function BracketPage({ params }: Props) {
 
   // Group matches by round number, properly typed
   const matchesByRound = (side: 'winners' | 'losers' | 'grand_final' | null): Record<number, Match[]> => {
+    if (!stage) return {};
     const filtered = stage.matches.filter((m: Match) => {
       if (side === null) return true;
       if (side === 'winners') return m.side === 'winners' || (m.side === null && !isDoubleElim);
@@ -173,8 +237,8 @@ export default function BracketPage({ params }: Props) {
     return `Round ${roundNum}`;
   };
 
-  const completedCount = stage.matches.filter((m: Match) => m.status === 'completed').length;
-  const totalActive = stage.matches.filter((m: Match) => m.status !== 'pending').length;
+  const completedCount = stage?.matches.filter((m: Match) => m.status === 'completed').length ?? 0;
+  const totalActive = stage?.matches.filter((m: Match) => m.status !== 'pending').length ?? 0;
   const progressPct = totalActive > 0 ? Math.round((completedCount / totalActive) * 100) : 0;
 
   // Tabs config
@@ -281,6 +345,7 @@ export default function BracketPage({ params }: Props) {
   };
 
   const renderStandings = () => {
+    if (!stage) return null;
     const standings = computeStandings(stage);
     return (
       <div className="container" style={{ marginTop: 24 }}>
@@ -377,7 +442,26 @@ export default function BracketPage({ params }: Props) {
       </div>
 
       {/* Content */}
-      {activeTab === 'standings'
+      {!stage || stage.matches.length === 0 ? (
+        <div className="container" style={{ marginTop: 48 }}>
+          <div className="card empty-state" style={{ padding: 64, textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🎮</div>
+            <h2 className="text-display" style={{ fontSize: 24, marginBottom: 8 }}>Bracket Not Seeded Yet</h2>
+            <p className="text-body text-secondary" style={{ maxWidth: 440, margin: '0 auto 24px' }}>
+              There are currently no confirmed entrants for this event. As players register, the tournament organizer can seed and generate the live bracket.
+            </p>
+            {isOrganizer ? (
+              <Link href={`/tournament/${id}/event/${eventId}/manage`} className="btn btn-primary" style={{ display: 'inline-flex' }}>
+                ⚙ Manage Seeds &amp; Generate Bracket
+              </Link>
+            ) : (
+              <Link href={`/tournament/${id}/register`} className="btn btn-primary" style={{ display: 'inline-flex' }}>
+                Register for this Event →
+              </Link>
+            )}
+          </div>
+        </div>
+      ) : activeTab === 'standings'
         ? renderStandings()
         : activeTab === 'winners' && !isDoubleElim
           ? renderRounds(matchesByRound(isRoundRobin ? null : 'winners'))

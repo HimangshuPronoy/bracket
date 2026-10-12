@@ -22,8 +22,9 @@ export interface CreateTournamentParams {
 }
 
 function slugify(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60)
-    + '-' + Math.random().toString(36).slice(2, 7);
+  const clean = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60);
+  const base = clean || 'tournament';
+  return base + '-' + Math.random().toString(36).slice(2, 7);
 }
 
 export async function createTournament(params: CreateTournamentParams) {
@@ -96,18 +97,20 @@ export async function createTournament(params: CreateTournamentParams) {
   }
 
   const namedEvents = events.filter(ev => ev.name.trim());
-  if (namedEvents.length > 0) {
-    const { error: evErr } = await supabase.from('events').insert(
-      namedEvents.map(ev => ({
-        tournament_id: tournament.id,
-        name: ev.name,
-        format: ev.format,
-        max_entrants: ev.maxEntrants ? parseInt(ev.maxEntrants) : null,
-      }))
-    );
-    if (evErr) {
-      throw new Error(`Tournament created but events failed: ${evErr.message}`);
-    }
+  if (namedEvents.length === 0) {
+    throw new Error('Please add at least one event (e.g. Singles Bracket).');
+  }
+
+  const { error: evErr } = await supabase.from('events').insert(
+    namedEvents.map(ev => ({
+      tournament_id: tournament.id,
+      name: ev.name,
+      format: ev.format,
+      max_entrants: ev.maxEntrants ? parseInt(ev.maxEntrants) : null,
+    }))
+  );
+  if (evErr) {
+    throw new Error(`Tournament created but events failed: ${evErr.message}`);
   }
 
   return tournament;

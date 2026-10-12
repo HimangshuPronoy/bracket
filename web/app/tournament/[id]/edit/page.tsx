@@ -36,6 +36,15 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
   const [videoUrl, setVideoUrl] = useState('');
   const [description, setDescription] = useState('');
 
+  const [status, setStatus] = useState('registration_open');
+  const [locations, setLocations] = useState<string[]>(['']);
+  const [tickets, setTickets] = useState<{ name: string; price: string }[]>([]);
+  const [existingEvents, setExistingEvents] = useState<any[]>([]);
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [newEventName, setNewEventName] = useState('');
+  const [newEventFormat, setNewEventFormat] = useState('double_elim');
+  const [newEventMax, setNewEventMax] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fetchLoading, setFetchLoading] = useState(true);
@@ -55,6 +64,15 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
         }
         setIsOnline(data.is_online);
         setLocation(data.location || '');
+        if (Array.isArray(data.locations) && data.locations.length > 0) {
+          setLocations(data.locations);
+        } else if (data.location) {
+          setLocations([data.location]);
+        }
+        if (Array.isArray(data.tickets) && data.tickets.length > 0) {
+          setTickets(data.tickets.map((t: any) => ({ name: t.name, price: String(t.price ?? '0') })));
+        }
+        setStatus(data.status || 'registration_open');
         setStartsAt(data.starts_at ? new Date(data.starts_at).toISOString().slice(0, 16) : '');
         setFee((data.registration_fee || 0).toString());
         setPrizePool(data.prize_pool || '');
@@ -64,6 +82,9 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
         setThumbnailPreview(data.thumbnail_url || '');
         setVideoUrl(data.video_url || '');
         setDescription(data.description_md || '');
+
+        const { data: evData } = await supabase.from('events').select('*').eq('tournament_id', id);
+        setExistingEvents(evData || []);
         
         // redirect if not organizer
         if (user && data.organizer_id !== user.id) {
@@ -75,6 +96,8 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
     
     if (user && !authLoading) {
       loadTournament();
+    } else if (!authLoading && !user) {
+      setFetchLoading(false);
     }
   }, [id, user, authLoading, router]);
 
@@ -151,20 +174,27 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
       }
 
       // 2. Update tournament
+      const cleanLocations = isOnline ? [] : locations.filter(l => l.trim());
+      const cleanTickets = tickets.filter(t => t.name.trim()).map(t => ({ name: t.name, price: parseFloat(t.price) || 0 }));
+      const primaryFee = cleanTickets.length > 0 ? cleanTickets[0].price : (parseFloat(fee) || 0);
+
       const { error: tErr } = await supabase
         .from('tournaments')
         .update({
           name,
           game: finalGame,
           is_online: isOnline,
-          location: isOnline ? null : location,
+          location: isOnline ? null : (cleanLocations[0] || location || null),
+          locations: cleanLocations,
           starts_at: dateObj.toISOString(),
-          registration_fee: parseFloat(fee) || 0,
+          registration_fee: primaryFee,
+          tickets: cleanTickets,
           prize_pool: prizePool || null,
           banner_url: uploadedBannerUrl || null,
           thumbnail_url: uploadedThumbnailUrl || null,
           video_url: videoUrl || null,
           description_md: description || null,
+          status,
         })
         .eq('id', id);
 
@@ -179,6 +209,54 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
       setLoading(false);
+    }
+  };
+
+  const handleAddNewEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEventName.trim()) return;
+    try {
+      const { data: newEv, error: evErr } = await supabase
+        .from('events')
+        .insert({
+          tournament_id: id,
+          name: newEventName.trim(),
+          format: newEventFormat,
+          max_entrants: newEventMax ? parseInt(newEventMax) : null,
+        })
+        .select()
+        .single();
+      if (evErr) throw evErr;
+      if (newEv) {
+        setExistingEvents(prev => [...prev, newEv]);
+        setNewEventName('');
+        setNewEventMax('');
+        setShowAddEvent(false);
+      }
+    } catch (err: any) {
+      alert(`Failed to add event: ${err.message}`);
+    }
+  };
+
+  const handleDeleteExistingEvent = async (evId: string, evName: string) => {
+    if (!window.confirm(`Are you sure you want to delete event "${evName}"? This will permanently remove the event, its bracket, and entrants.`)) return;
+    try {
+      const { error: delErr } = await supabase.from('events').delete().eq('id', evId);
+      if (delErr) throw delErr;
+      setExistingEvents(prev => prev.filter(e => e.id !== evId));
+    } catch (err: any) {
+      alert(`Failed to delete event: ${err.message}`);
+    }
+  };
+
+  const handleDeleteTournament = async () => {
+    if (!window.confirm(`Are you sure you want to permanently delete "${name}"? This action CANNOT be undone and will delete all events, matches, and registrations.`)) return;
+    try {
+      const { error: delErr } = await supabase.from('tournaments').delete().eq('id', id);
+      if (delErr) throw delErr;
+      router.push('/organizer');
+    } catch (err: any) {
+      alert(`Failed to delete tournament: ${err.message}`);
     }
   };
 
@@ -214,13 +292,25 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
                   />
                 </div>
                 <div className="input-group">
-                  <label className="input-label">Game *</label>
-                  <select className="input" value={game} onChange={e => setGame(e.target.value)}>
-                    {GAMES.map(g => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
+                  <label className="input-label">Tournament Status *</label>
+                  <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
+                    <option value="registration_open">🟢 Registration Open</option>
+                    <option value="registration_closed">🔴 Registration Closed</option>
+                    <option value="in_progress">⚔️ In Progress</option>
+                    <option value="completed">🏆 Completed</option>
+                    <option value="draft">📝 Draft</option>
+                    <option value="cancelled">✖ Cancelled</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="input-group mb-4">
+                <label className="input-label">Game *</label>
+                <select className="input" value={game} onChange={e => setGame(e.target.value)}>
+                  {GAMES.map(g => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
               </div>
 
               {game === 'Other' && (
@@ -260,12 +350,29 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
 
               {!isOnline && (
                 <div className="input-group mb-4">
-                  <label className="input-label">Venue Location *</label>
-                  <input
-                    type="text" className="input" required={!isOnline}
-                    placeholder="e.g. 123 Arcade St, New York, NY"
-                    value={location} onChange={e => setLocation(e.target.value)}
-                  />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="input-label mb-0">Venue Locations *</label>
+                    <button type="button" onClick={() => setLocations([...locations, ''])} className="text-sm text-accent bg-transparent border-0 cursor-pointer">
+                      + Add Location
+                    </button>
+                  </div>
+                  {locations.map((loc, i) => (
+                    <div key={i} className="flex gap-2 mb-2">
+                      <input
+                        type="text" className="input"
+                        placeholder="e.g. 123 Arcade St, New York, NY"
+                        value={loc} onChange={e => {
+                          const newLocs = [...locations];
+                          newLocs[i] = e.target.value;
+                          setLocations(newLocs);
+                        }}
+                        required={i === 0 && !isOnline}
+                      />
+                      {locations.length > 1 && (
+                        <button type="button" onClick={() => setLocations(locations.filter((_, idx) => idx !== i))} className="btn btn-ghost px-3 text-danger">✕</button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -277,24 +384,65 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
                     value={startsAt} onChange={e => setStartsAt(e.target.value)}
                   />
                 </div>
-                <div className="grid-2" style={{ gap: 16 }}>
+                <div className="input-group">
+                  <label className="input-label">Prize Pool</label>
+                  <input
+                    type="text" className="input"
+                    placeholder="e.g. $5,000"
+                    value={prizePool} onChange={e => setPrizePool(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Ticket Tiers */}
+              <div className="input-group mb-4 border-t pt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="input-label mb-0">Ticket Tiers / Pricing</label>
+                  <button type="button" onClick={() => setTickets([...tickets, { name: '', price: '0' }])} className="text-sm text-accent bg-transparent border-0 cursor-pointer">
+                    + Add Ticket Tier
+                  </button>
+                </div>
+                {tickets.length === 0 ? (
                   <div className="input-group">
-                    <label className="input-label">Entry Fee ($)</label>
+                    <label className="input-label">Default Entry Fee ($)</label>
                     <input
                       type="number" min="0" step="0.01" className="input"
                       placeholder="0.00"
                       value={fee} onChange={e => setFee(e.target.value)}
                     />
                   </div>
-                  <div className="input-group">
-                    <label className="input-label">Prize Pool</label>
-                    <input
-                      type="text" className="input"
-                      placeholder="e.g. $5,000"
-                      value={prizePool} onChange={e => setPrizePool(e.target.value)}
-                    />
+                ) : (
+                  <div className="flex-col gap-2">
+                    {tickets.map((ticket, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        <input
+                          type="text" className="input" style={{ flex: 2 }}
+                          placeholder="e.g. General Admission"
+                          value={ticket.name} onChange={e => {
+                            const newT = [...tickets];
+                            newT[i].name = e.target.value;
+                            setTickets(newT);
+                          }}
+                          required
+                        />
+                        <div className="relative" style={{ flex: 1 }}>
+                          <span style={{ position: 'absolute', left: 12, top: 10, color: 'var(--text-secondary)' }}>$</span>
+                          <input
+                            type="number" className="input" style={{ paddingLeft: 24 }}
+                            placeholder="0" min="0" step="0.01"
+                            value={ticket.price} onChange={e => {
+                              const newT = [...tickets];
+                              newT[i].price = e.target.value;
+                              setTickets(newT);
+                            }}
+                            required
+                          />
+                        </div>
+                        <button type="button" onClick={() => setTickets(tickets.filter((_, idx) => idx !== i))} className="btn btn-ghost px-3 text-danger">✕</button>
+                      </div>
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="input-group mb-4">
@@ -386,6 +534,140 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
+          {/* EVENTS & BRACKETS */}
+          <div className="card mb-8">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 24px 16px' }}>
+              <div>
+                <h2 className="text-headline">Events & Brackets</h2>
+                <p className="text-sm text-secondary">Manage existing events or add new games/brackets to this tournament.</p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setShowAddEvent(!showAddEvent)}
+              >
+                {showAddEvent ? 'Cancel' : '+ Add Event'}
+              </button>
+            </div>
+
+            <div className="divider" />
+
+            <div style={{ padding: 24 }}>
+              {showAddEvent && (
+                <div className="card mb-6" style={{ padding: 20, border: '1px solid var(--accent)', background: 'var(--tint-bg)' }}>
+                  <h3 className="text-subhead font-bold mb-3">Add New Sub-Event</h3>
+                  <div className="flex-col gap-3">
+                    <div className="input-group">
+                      <label className="input-label">Event Name</label>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="e.g. Melee Singles, Street Fighter 6 1v1"
+                        value={newEventName}
+                        onChange={e => setNewEventName(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="input-group">
+                        <label className="input-label">Format</label>
+                        <select
+                          className="input"
+                          value={newEventFormat}
+                          onChange={e => setNewEventFormat(e.target.value)}
+                        >
+                          <option value="double_elim">Double Elimination</option>
+                          <option value="single_elim">Single Elimination</option>
+                          <option value="round_robin">Round Robin</option>
+                          <option value="swiss">Swiss</option>
+                        </select>
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label">Max Entrants (Optional)</label>
+                        <input
+                          type="number"
+                          min="2"
+                          className="input"
+                          placeholder="Unlimited"
+                          value={newEventMax}
+                          onChange={e => setNewEventMax(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-2">
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setShowAddEvent(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={handleAddNewEvent}
+                        disabled={!newEventName.trim()}
+                      >
+                        Create Event
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {existingEvents.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+                  <p>No sub-events created yet.</p>
+                </div>
+              ) : (
+                <div className="flex-col gap-3">
+                  {existingEvents.map((ev: any) => (
+                    <div
+                      key={ev.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 16px',
+                        background: 'var(--surface-sunken)',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)'
+                      }}
+                    >
+                      <div>
+                        <div className="font-semibold text-headline">{ev.name}</div>
+                        <div className="text-xs text-secondary">
+                          {ev.format === 'double_elim' ? 'Double Elimination' : ev.format === 'single_elim' ? 'Single Elimination' : ev.format === 'round_robin' ? 'Round Robin' : ev.format === 'swiss' ? 'Swiss' : ev.format} • {ev.entrants_count ?? ev.entrant_count ?? 0} entrants {ev.max_entrants ? `/ ${ev.max_entrants} max` : ''}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/tournament/${id}/event/${ev.id}/manage`}
+                          className="btn btn-secondary btn-sm"
+                        >
+                          Manage
+                        </Link>
+                        <Link
+                          href={`/tournament/${id}/event/${ev.id}/bracket`}
+                          className="btn btn-ghost btn-sm"
+                        >
+                          Bracket →
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExistingEvent(ev.id, ev.name)}
+                          className="btn btn-ghost btn-sm text-danger"
+                          style={{ color: 'var(--danger)' }}
+                        >
+                          ✕ Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* SUBMIT */}
           <div className="flex justify-end gap-4 mt-8">
             <Link href={`/tournament/${id}`} className="btn btn-secondary btn-lg">
@@ -396,6 +678,23 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
             </button>
           </div>
         </form>
+
+        {/* DANGER ZONE */}
+        <div className="card mt-12" style={{ border: '1px solid var(--danger)', background: 'rgba(255, 69, 58, 0.04)', padding: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <h3 className="text-headline" style={{ color: 'var(--danger)', marginBottom: 4 }}>Danger Zone: Delete Tournament</h3>
+              <p className="text-sm text-secondary">Permanently delete this tournament, its brackets, and all attendee registrations.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDeleteTournament}
+              className="btn btn-danger"
+            >
+              Delete Tournament
+            </button>
+          </div>
+        </div>
       </div>
     </main>
   );

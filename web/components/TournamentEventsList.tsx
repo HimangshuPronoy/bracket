@@ -59,14 +59,12 @@ export function TournamentEventsList({ tournamentId, events }: TournamentEventsL
                     <span>{event.format}</span>
                   </div>
                 </div>
-                {registered && (
-                  <Link
-                    href={`/tournament/${tournamentId}/event/${event.id}/bracket`}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    View Bracket →
-                  </Link>
-                )}
+                <Link
+                  href={`/tournament/${tournamentId}/event/${event.id}/bracket`}
+                  className="btn btn-secondary btn-sm"
+                >
+                  View Bracket →
+                </Link>
               </div>
             );
           })}

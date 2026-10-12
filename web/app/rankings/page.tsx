@@ -16,9 +16,19 @@ export default async function RankingsPage() {
     .select(`
       user_id,
       wins,
-      tournaments ( game ),
-      profiles ( display_name, handle )
+      tournaments ( game )
     `);
+
+  // Fetch profiles resiliently
+  const profilesMap = new Map<string, { display_name: string; handle: string }>();
+  if (rankingsData && rankingsData.length > 0) {
+    const userIds = Array.from(new Set(rankingsData.map((r: any) => r.user_id)));
+    const { data: pData } = await supabase
+      .from('profiles')
+      .select('id, display_name, handle')
+      .in('id', userIds);
+    (pData || []).forEach((p: any) => profilesMap.set(p.id, p));
+  }
 
   // Group by game
   const gamesMap = new Map<string, Map<string, { name: string; wins: number }>>();
@@ -28,7 +38,8 @@ export default async function RankingsPage() {
       const game = row.tournaments?.game;
       if (!game) return;
       const userId = row.user_id;
-      const name = row.profiles?.display_name || row.profiles?.handle || 'Unknown Player';
+      const profile = profilesMap.get(userId);
+      const name = profile?.display_name || profile?.handle || 'Player ' + userId.slice(0, 5);
       
       if (!gamesMap.has(game)) gamesMap.set(game, new Map());
       const playersMap = gamesMap.get(game)!;
@@ -47,12 +58,12 @@ export default async function RankingsPage() {
         rank: i + 1,
         team: '',
         name: p.name,
-        country: '🏳️', // Or fetch from profile if added
+        country: '🏳️',
         wins: p.wins
       }));
 
     return {
-      id: game.toLowerCase().replace(/\\s+/g, '-'),
+      id: game.toLowerCase().replace(/\s+/g, '-'),
       title: `${game} Global`,
       subtitle: 'Current Standings',
       imageUrl: index % 2 === 0 
@@ -114,20 +125,16 @@ export default async function RankingsPage() {
               {/* Left Column (Ranks 1 to 4) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {board.players.slice(0, 4).map(p => (
-                  <div key={p.rank} style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ fontSize: 14, color: 'var(--text-muted)', width: 16, textAlign: 'right' }}>
+                  <div key={p.rank} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <div style={{ fontSize: 14, color: p.rank === 1 ? '#FFD700' : p.rank === 2 ? '#C0C0C0' : p.rank === 3 ? '#CD7F32' : 'var(--text-muted)', width: 16, textAlign: 'right', fontWeight: 700 }}>
                       {p.rank}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ fontSize: 14 }}>
-                        {p.team && <span style={{ color: 'var(--text-muted)', fontWeight: 600, marginRight: 4 }}>{p.team}</span>}
-                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>{p.name}</span>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                        {p.name}
                       </div>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2, opacity: 0.7 }}>
-                        <span style={{ fontSize: 12 }}>{p.country}</span>
-                        {/* Mock social icons */}
-                        <span style={{ fontSize: 10 }}>🐦</span>
-                        <span style={{ fontSize: 10 }}>🎮</span>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                        {p.wins} {p.wins === 1 ? 'win' : 'wins'}
                       </div>
                     </div>
                   </div>
@@ -137,19 +144,16 @@ export default async function RankingsPage() {
               {/* Right Column (Ranks 5 to 7 + View All) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {board.players.slice(4, 7).map(p => (
-                  <div key={p.rank} style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ fontSize: 14, color: 'var(--text-muted)', width: 16, textAlign: 'right' }}>
+                  <div key={p.rank} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <div style={{ fontSize: 14, color: 'var(--text-muted)', width: 16, textAlign: 'right', fontWeight: 600 }}>
                       {p.rank}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ fontSize: 14 }}>
-                        {p.team && <span style={{ color: 'var(--text-muted)', fontWeight: 600, marginRight: 4 }}>{p.team}</span>}
-                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>{p.name}</span>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                        {p.name}
                       </div>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2, opacity: 0.7 }}>
-                        <span style={{ fontSize: 12 }}>{p.country}</span>
-                        <span style={{ fontSize: 10 }}>🐦</span>
-                        <span style={{ fontSize: 10 }}>🎮</span>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                        {p.wins} {p.wins === 1 ? 'win' : 'wins'}
                       </div>
                     </div>
                   </div>

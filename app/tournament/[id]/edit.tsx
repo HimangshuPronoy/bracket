@@ -8,15 +8,18 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuth } from '../../../src/features/auth/AuthContext';
 import { useTournament, useUpdateTournament } from '../../../src/hooks/useTournaments';
+import { deleteEvent } from '../../../src/lib/services/event.service';
 
 export default function EditTournamentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { spacing, colors, radii } = useTheme();
   const router = useRouter();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   const { data: tournament, isLoading } = useTournament(id);
   const updateMutation = useUpdateTournament();
@@ -39,19 +42,68 @@ export default function EditTournamentScreen() {
   // Populate data when tournament is loaded
   useEffect(() => {
     if (tournament) {
-      setName(tournament.name);
-      setGame(tournament.game);
-      setLocation(tournament.location || '');
-      setIsOnline(tournament.is_online);
-      setStartsAt(tournament.starts_at ? new Date(tournament.starts_at) : new Date());
-      setFee(tournament.registration_fee.toString());
-      setPrizePool(tournament.prize_pool || '');
-      setBannerUrl(tournament.banner_url || '');
-      setThumbnailUrl(tournament.thumbnail_url || '');
-      setVideoUrl(tournament.video_url || '');
-      setDescription(tournament.description_md || '');
+      queueMicrotask(() => {
+        setName(tournament.name);
+        setGame(tournament.game);
+        setLocation(tournament.location || '');
+        setIsOnline(tournament.is_online);
+        setStartsAt(tournament.starts_at ? new Date(tournament.starts_at) : new Date());
+        setFee(tournament.registration_fee.toString());
+        setPrizePool(tournament.prize_pool || '');
+        setBannerUrl(tournament.banner_url || '');
+        setThumbnailUrl(tournament.thumbnail_url || '');
+        setVideoUrl(tournament.video_url || '');
+        setDescription(tournament.description_md || '');
+      });
     }
   }, [tournament]);
+
+  const handleDeleteTournament = () => {
+    Alert.alert(
+      'Delete Tournament',
+      `Permanently delete "${name}"? This action cannot be undone and will delete all events, matches, and registrations.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Tournament',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase.from('tournaments').delete().eq('id', tournament?.id ?? id);
+              if (error) throw error;
+              router.replace('/(tabs)/organizer');
+            } catch (e: any) {
+              Alert.alert('Error', e.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteExistingEvent = (eventId: string, eventName: string) => {
+    Alert.alert(
+      'Delete Event',
+      `Permanently delete "${eventName}"? All entrant registrations and bracket matches for this event will be removed.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteEvent(eventId);
+              queryClient.invalidateQueries({ queryKey: ['tournament', id] });
+              queryClient.invalidateQueries({ queryKey: ['events', id] });
+              Alert.alert('Success', `"${eventName}" has been deleted.`);
+            } catch (e: any) {
+              Alert.alert('Error', e.message || 'Failed to delete event');
+            }
+          },
+        },
+      ]
+    );
+  };
   
   const handleUpdate = async () => {
     if (!name || !game || !startsAt) {
@@ -152,7 +204,7 @@ export default function EditTournamentScreen() {
   if (user?.id !== tournament.organizer_id) {
     return (
       <Screen backgroundColor="backgroundGrouped" style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <Text>You don't have permission to edit this tournament.</Text>
+        <Text>You don&apos;t have permission to edit this tournament.</Text>
         <Button label="Go Back" onPress={() => router.back()} style={{ marginTop: 20 }} />
       </Screen>
     );
@@ -323,9 +375,42 @@ export default function EditTournamentScreen() {
 
                <TextField label="Video URL (YouTube/Twitch)" placeholder="https://youtube.com/watch?v=..." value={videoUrl} onChangeText={setVideoUrl} autoCapitalize="none" keyboardType="url" />
                <TextField label="Description" placeholder="Markdown supported..." value={description} onChangeText={setDescription} multiline />
+
+              {/* Sub-Events List */}
+              <View style={{ gap: spacing.s, marginTop: spacing.m }}>
+                <Text variant="subheadline" style={{ fontWeight: '600' }}>
+                  Tournament Events ({tournament?.events?.length ?? 0})
+                </Text>
+                {tournament?.events && tournament.events.length > 0 ? (
+                  tournament.events.map((ev) => (
+                    <Card key={ev.id} style={{ padding: spacing.m, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flex: 1, marginRight: spacing.s }}>
+                        <Text variant="headline" style={{ fontSize: 16 }}>{ev.name}</Text>
+                        <Text variant="footnote" color="secondaryLabel">
+                          {ev.format} • {ev.entrants_count || 0} entrants
+                        </Text>
+                      </View>
+                      <Button
+                        label="Delete"
+                        variant="destructive"
+                        style={{ paddingHorizontal: spacing.s, minHeight: 32 }}
+                        onPress={() => handleDeleteExistingEvent(ev.id, ev.name)}
+                      />
+                    </Card>
+                  ))
+                ) : (
+                  <Text variant="footnote" color="secondaryLabel">No events created yet.</Text>
+                )}
+              </View>
              </View>
 
              <Button label="Save Changes" onPress={handleUpdate} loading={updateMutation.isPending} />
+             <Button
+               label="Delete Tournament"
+               variant="destructive"
+               onPress={handleDeleteTournament}
+               style={{ marginTop: spacing.s }}
+             />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -67,8 +67,18 @@ export default async function TournamentPage({ params }: Props) {
 
   const gameEmoji: Record<string, string> = {
     'Super Fighter V': '🥊',
+    'Smash Bros. Ultimate': '⚔️',
     'Bros. Ultimate': '⚔️',
     'Fighter Z': '🌀',
+    'Tekken 8': '🥊',
+    'Valorant': '🔫',
+    'CS2': '🔫',
+    'League of Legends': '🧙',
+    'Rocket League': '🚗',
+    'Dragon Ball FighterZ': '🌀',
+    'Guilty Gear Strive': '⚔️',
+    'Street Fighter 6': '🥊',
+    'Mortal Kombat 1': '💀',
   };
 
   return (

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/lib/AuthContext';
 
 const translations: Record<string, Record<string, string>> = {
   en: {
@@ -75,6 +77,7 @@ const languages = [
 ];
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [selectedLang, setSelectedLang] = useState('en');
   const [autoDetect, setAutoDetect] = useState(true);
 
@@ -157,18 +160,38 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Account Settings Placeholder */}
+        {/* Account Settings */}
         <section className="card" style={{ padding: 32 }}>
           <h2 className="text-title mb-2">{t.account}</h2>
           <p className="text-body text-secondary mb-6">{t.accountDesc}</p>
           
           <div className="divider" style={{ margin: '0 0 24px 0' }} />
           
-          <div className="empty-state" style={{ padding: '24px 0' }}>
-            <span style={{ fontSize: 32, opacity: 0.5, marginBottom: 12 }}>👤</span>
-            <p className="text-secondary">{t.accountEmpty}</p>
-            <button className="btn btn-secondary mt-4">{t.login}</button>
-          </div>
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                  Signed in as
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                  {user.email}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <Link href="/profile" className="btn btn-secondary">
+                  Manage Profile →
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state" style={{ padding: '24px 0' }}>
+              <span style={{ fontSize: 32, opacity: 0.5, marginBottom: 12 }}>👤</span>
+              <p className="text-secondary">{t.accountEmpty}</p>
+              <Link href="/login" className="btn btn-secondary mt-4" style={{ display: 'inline-flex' }}>
+                {t.login}
+              </Link>
+            </div>
+          )}
         </section>
 
       </div>

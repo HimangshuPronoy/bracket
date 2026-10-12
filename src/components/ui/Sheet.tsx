@@ -1,4 +1,4 @@
-import React, { forwardRef, useMemo } from 'react';
+import React, { forwardRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import BottomSheet, { BottomSheetProps, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { useTheme } from '../../theme/tokens';
@@ -40,6 +40,7 @@ export const Sheet = forwardRef<BottomSheet, SheetProps>(
     );
   }
 );
+Sheet.displayName = 'Sheet';
 
 const styles = StyleSheet.create({
   contentContainer: {

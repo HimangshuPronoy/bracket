@@ -482,19 +482,50 @@ export function computeStandings(state: StageState): Standing[] {
     }).map((s, i) => ({ ...s, place: i + 1 }));
   }
 
-  // Elimination: rank by which round the entrant was eliminated
+  // Elimination: rank by tournament progression
+  let championId: string | null = null;
+  let runnerUpId: string | null = null;
+
+  if (state.format === 'double_elim') {
+    const gfMatches = state.matches
+      .filter((m) => m.round === 0 && m.status === 'completed')
+      .sort((a, b) => b.position - a.position);
+    if (gfMatches.length > 0) {
+      championId = gfMatches[0].winnerId;
+      runnerUpId = gfMatches[0].loserId;
+    }
+  } else if (state.format === 'single_elim') {
+    const maxR = Math.max(...state.matches.map((m) => m.round), 1);
+    const finalMatch = state.matches.find((m) => m.round === maxR && m.status === 'completed');
+    if (finalMatch) {
+      championId = finalMatch.winnerId;
+      runnerUpId = finalMatch.loserId;
+    }
+  }
+
   const lossRound = new Map<string, number>();
   for (const match of state.matches) {
     if (match.status !== 'completed' || !match.loserId) continue;
+    if (match.round === 0) continue; // Grand final runner-up is explicitly handled above
     const absRound = Math.abs(match.round);
     const prev = lossRound.get(match.loserId);
     if (prev === undefined || absRound > prev) lossRound.set(match.loserId, absRound);
   }
-  const maxRound = Math.max(...[...lossRound.values()], 0);
 
-  return [...standings].sort((a, b) => {
-    const aRound = lossRound.get(a.entrantId) ?? maxRound + 1;
-    const bRound = lossRound.get(b.entrantId) ?? maxRound + 1;
-    return bRound - aRound;
-  }).map((s, i) => ({ ...s, place: i + 1 }));
+  return [...standings]
+    .sort((a, b) => {
+      if (a.entrantId === championId) return -1;
+      if (b.entrantId === championId) return 1;
+      if (a.entrantId === runnerUpId) return -1;
+      if (b.entrantId === runnerUpId) return 1;
+
+      const aRound = lossRound.get(a.entrantId) ?? 0;
+      const bRound = lossRound.get(b.entrantId) ?? 0;
+      if (bRound !== aRound) return bRound - aRound;
+
+      const aGwp = a.gameWins / (a.gameWins + a.gameLosses || 1);
+      const bGwp = b.gameWins / (b.gameWins + b.gameLosses || 1);
+      return bGwp - aGwp;
+    })
+    .map((s, i) => ({ ...s, place: i + 1 }));
 }

@@ -85,6 +85,74 @@ export default function ManageBracketScreen() {
     }
   };
 
+  const handleRemoveEntrant = (userId: string, name: string) => {
+    Alert.alert(
+      'Remove Entrant',
+      `Are you sure you want to remove "${name}" from this event?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { data: reg, error: fetchErr } = await supabase
+                .from('registrations')
+                .select('id, event_ids')
+                .eq('tournament_id', id)
+                .eq('user_id', userId)
+                .single();
+              if (fetchErr) throw fetchErr;
+
+              const updatedEvents = (reg?.event_ids || []).filter((eId: string) => eId !== eventId);
+              if (updatedEvents.length === 0) {
+                const { error: updErr } = await supabase
+                  .from('registrations')
+                  .update({ status: 'cancelled', event_ids: [] })
+                  .eq('id', reg.id);
+                if (updErr) throw updErr;
+              } else {
+                const { error: updErr } = await supabase
+                  .from('registrations')
+                  .update({ event_ids: updatedEvents })
+                  .eq('id', reg.id);
+                if (updErr) throw updErr;
+              }
+
+              const filtered = registrants.filter(r => r.userId !== userId);
+              setRegistrants(filtered.map((r, i) => ({ ...r, seed: i + 1 })));
+            } catch (e: any) {
+              Alert.alert('Error', e.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteEvent = () => {
+    Alert.alert(
+      'Delete Event',
+      `Permanently delete event "${event?.name}"? All brackets and matches for this event will be deleted.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Event',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error: delErr } = await supabase.from('events').delete().eq('id', eventId);
+              if (delErr) throw delErr;
+              router.replace(`/tournament/${id}`);
+            } catch (e: any) {
+              Alert.alert('Error', e.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleGenerateBracket = async () => {
     if (!event || registrants.length < 2) {
       Alert.alert('Not enough entrants', 'At least 2 entrants are required.');
@@ -268,6 +336,15 @@ export default function ManageBracketScreen() {
                     />
                   )}
 
+                  {/* Remove entrant button */}
+                  <Pressable
+                    onPress={() => handleRemoveEntrant(r.userId, r.name)}
+                    hitSlop={8}
+                    style={[styles.removeBtn, { backgroundColor: colors.tintBg }]}
+                  >
+                    <Text variant="caption" style={{ color: colors.destructive, fontWeight: '700' }}>✕</Text>
+                  </Pressable>
+
                   {/* Reorder */}
                   <View style={{ gap: 2 }}>
                     <Pressable
@@ -289,6 +366,13 @@ export default function ManageBracketScreen() {
               ))
             )}
           </View>
+
+          <Button
+            label="Delete Event"
+            variant="destructive"
+            onPress={handleDeleteEvent}
+            style={{ marginTop: spacing.l, marginBottom: spacing.m }}
+          />
         </View>
       </ScrollView>
 
@@ -328,5 +412,6 @@ const styles = StyleSheet.create({
   entrantRow: { marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderWidth: 1 },
   seedBadge: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   arrowBtn: { width: 28, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  removeBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   cta: { padding: 16, paddingBottom: 32, borderTopWidth: 1 },
 });

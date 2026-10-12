@@ -65,14 +65,16 @@ export default function EventBracketScreen() {
             .filter(r => r.status === 'confirmed' && r.event_ids.includes(eventId))
             .map((r, idx) => ({ id: r.user_id, seed: idx + 1 }));
 
-          const seedList = entrants.length > 0
-            ? entrants.slice(0, eData.max_entrants ?? 64)
-            : Array.from({ length: 8 }, (_, i) => ({ id: `Player ${i + 1}`, seed: i + 1 }));
+          const seedList = entrants.length >= 2 ? entrants.slice(0, eData.max_entrants ?? 64) : [];
 
-          const generated = eData.format === 'double_elim'
-            ? generateDoubleElim(seedList)
-            : generateSingleElim(seedList);
-          setStage(generated);
+          if (seedList.length >= 2) {
+            const generated = eData.format === 'double_elim'
+              ? generateDoubleElim(seedList)
+              : generateSingleElim(seedList);
+            setStage(generated);
+          } else {
+            setStage(null);
+          }
         }
       } catch (e) {
         console.error('[BracketScreen] load error', e);
@@ -111,7 +113,7 @@ export default function EventBracketScreen() {
   };
 
   const handleReport = async (scoreA: number, scoreB: number) => {
-    if (!selectedMatch || !stage || !eventId) return;
+    if (!selectedMatch || !stage || !eventId || !id) return;
     const res = reportResult(stage, selectedMatch.id, scoreA, scoreB);
     if (res.ok) {
       const newStage = res.value;
@@ -121,6 +123,22 @@ export default function EventBracketScreen() {
       setIsSaving(true);
       try {
         await saveStageData(eventId, newStage);
+        if (newStage.status === 'completed') {
+          const { computeStandings } = await import('../../../../../src/lib/bracket');
+          const { recordBracketResults } = await import('../../../../../src/lib/services/ranking.service');
+          const standings = computeStandings(newStage);
+          const validResults = standings
+            .filter(s => s.entrantId && s.entrantId.length > 20)
+            .map(s => ({
+              userId: s.entrantId,
+              placement: s.place,
+              wins: s.wins,
+              losses: s.losses,
+            }));
+          if (validResults.length > 0) {
+            await recordBracketResults(id, eventId, validResults);
+          }
+        }
       } catch (e: any) {
         Alert.alert('Save failed', e.message);
       } finally {

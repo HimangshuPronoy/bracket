@@ -16,7 +16,17 @@ export default function OrganizerDashboardPage() {
   const handlePublish = async (id: string) => {
     const { error } = await supabase.from('tournaments').update({ status: 'registration_open' }).eq('id', id);
     if (!error) {
-      setMyTournaments(prev => prev.map(t => t.id === id ? { ...t, registrationOpen: true } : t));
+      setMyTournaments(prev => prev.map(t => t.id === id ? { ...t, status: 'registration_open', registrationOpen: true } : t));
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete tournament "${name}"? This action cannot be undone.`)) return;
+    const { error } = await supabase.from('tournaments').delete().eq('id', id);
+    if (error) {
+      alert(`Failed to delete tournament: ${error.message}`);
+    } else {
+      setMyTournaments(prev => prev.filter(t => t.id !== id));
     }
   };
 
@@ -38,14 +48,19 @@ export default function OrganizerDashboardPage() {
 
         if (tournaments.length > 0) {
           const ids = tournaments.map(t => t.id);
-          const { count } = await supabase
+          const { data: regRows } = await supabase
             .from('registrations')
-            .select('*', { count: 'exact', head: true })
-            .in('tournament_id', ids);
+            .select('tournament_id')
+            .in('tournament_id', ids)
+            .eq('status', 'confirmed');
           
+          const regCount = regRows?.length ?? 0;
+          const feeMap = new Map<string, number>(tournaments.map(t => [t.id, t.registrationFee ?? 0]));
+          const totalRevenue = (regRows || []).reduce((sum, r: any) => sum + (feeMap.get(r.tournament_id) ?? 0), 0);
+
           setStats({
-            registrations: count ?? 0,
-            revenue: (count ?? 0) * (tournaments[0]?.registrationFee ?? 0),
+            registrations: regCount,
+            revenue: totalRevenue,
           });
         }
         setLoading(false);
@@ -149,11 +164,20 @@ export default function OrganizerDashboardPage() {
                     style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 'var(--radius-md)' }}
                   />
 
-                  <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <h3 className="text-headline">{t.name}</h3>
-                      <span className={`badge ${t.registrationOpen ? 'badge-success' : 'badge-neutral'}`}>
-                        {t.registrationOpen ? 'Open' : 'Draft'}
+                      <span className={`badge ${
+                        t.status === 'registration_open' ? 'badge-success' :
+                        t.status === 'in_progress' ? 'badge-accent' :
+                        t.status === 'cancelled' ? 'badge-danger' :
+                        'badge-neutral'
+                      }`}>
+                        {t.status === 'registration_open' ? 'Open' :
+                         t.status === 'in_progress' ? 'In Progress' :
+                         t.status === 'completed' ? 'Completed' :
+                         t.status === 'cancelled' ? 'Cancelled' :
+                         'Draft'}
                       </span>
                     </div>
                     <p className="text-sm text-secondary">{t.date} • {t.game}</p>
@@ -161,18 +185,35 @@ export default function OrganizerDashboardPage() {
                   </div>
 
                   <div className="flex-col gap-2">
-                    <Link
-                      href={`/tournament/${t.id}`}
-                      className="btn btn-secondary btn-sm"
-                      style={{ width: 140, textAlign: 'center', textDecoration: 'none' }}
-                    >
-                      View Tournament
-                    </Link>
-                    {!t.registrationOpen && (
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/tournament/${t.id}`}
+                        className="btn btn-secondary btn-sm"
+                        style={{ textAlign: 'center', textDecoration: 'none' }}
+                      >
+                        View
+                      </Link>
+                      <Link
+                        href={`/tournament/${t.id}/edit`}
+                        className="btn btn-secondary btn-sm"
+                        style={{ textAlign: 'center', textDecoration: 'none' }}
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(t.id, t.name)}
+                        className="btn btn-ghost btn-sm text-danger"
+                        style={{ color: 'var(--danger)' }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    {(t.status === 'draft' || !t.registrationOpen) && t.status !== 'completed' && t.status !== 'cancelled' && t.status !== 'in_progress' && (
                       <button 
                         onClick={() => handlePublish(t.id)}
                         className="btn btn-primary btn-sm"
-                        style={{ width: 140 }}
+                        style={{ width: '100%' }}
                       >
                         Publish 🚀
                       </button>

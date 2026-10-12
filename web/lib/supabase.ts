@@ -39,7 +39,8 @@ export function mapTournament(t: SupabaseTournament) {
     videoUrl: t.video_url,
     organizerName: '',
     descriptionMarkdown: t.description_md,
-    registrationOpen: t.status === 'registration_open' || t.status === 'published' || t.status === 'draft',
+    status: t.status,
+    registrationOpen: t.status === 'registration_open',
     tags: t.tags || [],
   };
 }

@@ -100,7 +100,7 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
           </div>
           <div className="divider" />
           <p className="text-sm text-secondary mb-4">View live brackets for your events:</p>
-          <div className="flex-col gap-2">
+          <div className="flex-col gap-2 mb-4">
             {events
               .filter(e => registration?.event_ids?.includes(e.id))
               .map(e => (
@@ -113,19 +113,32 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
                 </Link>
               ))}
           </div>
+
+          <Link
+            href={`/tournament/${tournamentId}/register`}
+            className="btn btn-secondary btn-block mb-2"
+          >
+            ✏️ Change Events
+          </Link>
+
           <button
             onClick={async () => {
               if (!registration) return;
-              await supabase
+              if (!window.confirm('Are you sure you want to withdraw from this tournament? Your registration for all events will be cancelled.')) return;
+              const { error } = await supabase
                 .from('registrations')
-                .update({ status: 'cancelled' })
+                .update({ status: 'cancelled', event_ids: [] })
                 .eq('id', registration.id);
-              setRegistration(null);
+              if (error) {
+                alert(`Failed to withdraw: ${error.message}`);
+              } else {
+                setRegistration(null);
+              }
             }}
-            className="btn btn-ghost btn-sm btn-block mt-4 text-danger"
-            style={{ opacity: 0.8 }}
+            className="btn btn-ghost btn-sm btn-block text-danger"
+            style={{ color: 'var(--danger)' }}
           >
-            Cancel Registration
+            Withdraw from Tournament
           </button>
         </div>
       ) : (

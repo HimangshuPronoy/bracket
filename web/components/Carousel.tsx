@@ -1,13 +1,16 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import Link from 'next/link';
 import TournamentCard from './TournamentCard';
+
 interface Props {
   title: string;
   tournaments: any[];
+  viewAllHref?: string;
 }
 
-export default function Carousel({ title, tournaments }: Props) {
+export default function Carousel({ title, tournaments, viewAllHref }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -67,9 +70,13 @@ export default function Carousel({ title, tournaments }: Props) {
               →
             </button>
           </div>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer' }}>
-            View all
-          </div>
+          <Link
+            href={viewAllHref || '/search'}
+            style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600, textDecoration: 'none' }}
+            className="hover-text-primary"
+          >
+            View all →
+          </Link>
         </div>
       </div>
       

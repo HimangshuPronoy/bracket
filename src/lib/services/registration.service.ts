@@ -135,6 +135,38 @@ export async function checkInPlayer(registrationId: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Organizer removes a player from a specific event (or cancels if last event) */
+export async function removePlayerFromEvent(
+  tournamentId: string,
+  userId: string,
+  eventId: string
+): Promise<void> {
+  const { data: reg, error: fetchErr } = await supabase
+    .from('registrations')
+    .select('id, event_ids')
+    .eq('tournament_id', tournamentId)
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchErr || !reg) throw fetchErr || new Error('Registration not found');
+
+  const updatedEvents = (reg.event_ids || []).filter((e: string) => e !== eventId);
+
+  if (updatedEvents.length === 0) {
+    const { error } = await supabase
+      .from('registrations')
+      .update({ status: 'cancelled', event_ids: [] })
+      .eq('id', reg.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from('registrations')
+      .update({ event_ids: updatedEvents })
+      .eq('id', reg.id);
+    if (error) throw error;
+  }
+}
+
 // ─── Realtime ─────────────────────────────────────────────────────────────────
 
 /** Subscribe to registration changes for a tournament (organizer dashboard) */

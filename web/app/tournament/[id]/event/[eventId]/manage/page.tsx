@@ -44,20 +44,39 @@ export default function ManageBracketPage({ params }: Props) {
       setBracketGenerated(!!eData.stage_data);
 
       // Fetch confirmed registrations for this event
-      const { data: regs } = await supabase
+      const { data: regs, error: regsErr } = await supabase
         .from('registrations')
-        .select('user_id, event_ids, checked_in, profiles(display_name, handle)')
+        .select('user_id, event_ids, checked_in')
         .eq('tournament_id', id)
         .eq('status', 'confirmed')
         .order('registered_at', { ascending: true });
 
+      if (regsErr) {
+        console.error('Error fetching registrations:', regsErr);
+      }
+
       const eventRegs = (regs || []).filter((r: any) => r.event_ids.includes(eventId));
-      setRegistrants(eventRegs.map((r: any, idx: number) => ({
-        userId: r.user_id,
-        name: r.profiles?.display_name || r.profiles?.handle || r.user_id.slice(0, 8),
-        seed: idx + 1,
-        checkedIn: r.checked_in ?? false,
-      })));
+      const userIds = Array.from(new Set(eventRegs.map((r: any) => r.user_id)));
+      const profilesMap = new Map<string, { display_name: string; handle: string }>();
+
+      if (userIds.length > 0) {
+        const { data: pData } = await supabase
+          .from('profiles')
+          .select('id, display_name, handle')
+          .in('id', userIds);
+        (pData || []).forEach((p: any) => profilesMap.set(p.id, p));
+      }
+
+      setRegistrants(eventRegs.map((r: any, idx: number) => {
+        const p = profilesMap.get(r.user_id);
+        const displayName = p?.display_name || p?.handle || `Player ${idx + 1}`;
+        return {
+          userId: r.user_id,
+          name: displayName,
+          seed: idx + 1,
+          checkedIn: r.checked_in ?? false,
+        };
+      }));
       setLoading(false);
     }
     load();
@@ -74,25 +93,92 @@ export default function ManageBracketPage({ params }: Props) {
 
   const handleCheckIn = async (userId: string) => {
     setCheckingIn(userId);
-    const reg = await supabase
+    const { error: checkErr } = await supabase
       .from('registrations')
       .update({ checked_in: true })
       .eq('user_id', userId)
       .eq('tournament_id', id);
 
-    setRegistrants(prev =>
-      prev.map(r => r.userId === userId ? { ...r, checkedIn: true } : r)
-    );
+    if (checkErr) {
+      alert(`Check-in failed: ${checkErr.message}`);
+    } else {
+      setRegistrants(prev =>
+        prev.map(r => r.userId === userId ? { ...r, checkedIn: true } : r)
+      );
+    }
     setCheckingIn(null);
+  };
+
+  const handleRemoveEntrant = async (userId: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to remove "${name}" from this event?`)) return;
+    try {
+      const { data: reg, error: fetchErr } = await supabase
+        .from('registrations')
+        .select('id, event_ids')
+        .eq('tournament_id', id)
+        .eq('user_id', userId)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      const updatedEvents = (reg?.event_ids || []).filter((eId: string) => eId !== eventId);
+      if (updatedEvents.length === 0) {
+        const { error: updErr } = await supabase
+          .from('registrations')
+          .update({ status: 'cancelled', event_ids: [] })
+          .eq('id', reg.id);
+        if (updErr) throw updErr;
+      } else {
+        const { error: updErr } = await supabase
+          .from('registrations')
+          .update({ event_ids: updatedEvents })
+          .eq('id', reg.id);
+        if (updErr) throw updErr;
+      }
+
+      const filtered = registrants.filter(r => r.userId !== userId);
+      setRegistrants(filtered.map((r, i) => ({ ...r, seed: i + 1 })));
+    } catch (err: any) {
+      alert(`Failed to remove entrant: ${err.message}`);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!window.confirm(`Are you sure you want to permanently delete event "${event?.name}"? All brackets and matches for this event will be deleted.`)) return;
+    try {
+      const { error: delErr } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
+      if (delErr) throw delErr;
+      router.push(`/tournament/${id}`);
+    } catch (err: any) {
+      alert(`Failed to delete event: ${err.message}`);
+    }
   };
 
   const handleGenerateBracket = async () => {
     if (!event) return;
+    if (registrants.length < 2) {
+      setError('At least 2 entrants are required to generate a bracket.');
+      return;
+    }
     setSaving(true);
     setError('');
 
     try {
-      const entrants: Entrant[] = registrants.map((r, i) => ({ id: r.name, seed: i + 1 }));
+      // Ensure entrant IDs are distinct by appending seed if duplicate names exist
+      const nameCounts: Record<string, number> = {};
+      registrants.forEach(r => { nameCounts[r.name] = (nameCounts[r.name] || 0) + 1; });
+      const seenNames: Record<string, number> = {};
+
+      const entrants: Entrant[] = registrants.map((r, i) => {
+        let entrantName = r.name;
+        if (nameCounts[r.name] > 1) {
+          seenNames[r.name] = (seenNames[r.name] || 0) + 1;
+          entrantName = `${r.name} (#${seenNames[r.name]})`;
+        }
+        return { id: entrantName, seed: i + 1 };
+      });
 
       let stage: StageState;
       if (event.format === 'double_elim') {
@@ -230,11 +316,22 @@ export default function ManageBracketPage({ params }: Props) {
                     className="btn btn-secondary btn-sm"
                     disabled={checkingIn === r.userId}
                     onClick={() => handleCheckIn(r.userId)}
-                    style={{ minWidth: 100 }}
+                    style={{ minWidth: 90 }}
                   >
                     {checkingIn === r.userId ? '...' : 'Check In'}
                   </button>
                 )}
+
+                {/* Remove entrant button */}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--danger)', padding: '4px 10px' }}
+                  onClick={() => handleRemoveEntrant(r.userId, r.name)}
+                  title="Remove player from event"
+                >
+                  ✕ Remove
+                </button>
 
                 {/* Reorder buttons */}
                 <div className="flex gap-1">
@@ -290,6 +387,14 @@ export default function ManageBracketPage({ params }: Props) {
         <Link href={`/tournament/${id}`} className="btn btn-ghost">
           Back to Tournament
         </Link>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm text-danger"
+          style={{ color: 'var(--danger)', marginLeft: 'auto' }}
+          onClick={handleDeleteEvent}
+        >
+          🗑 Delete Event
+        </button>
       </div>
 
       {registrants.length < 2 && (

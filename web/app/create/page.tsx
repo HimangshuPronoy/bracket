@@ -62,6 +62,11 @@ export default function CreateEventPage() {
       setError('Location is required for in-person events.'); 
       return; 
     }
+    const validEvents = events.filter(ev => ev.name.trim());
+    if (validEvents.length === 0) {
+      setError('Please add at least one event (e.g. Singles Bracket).');
+      return;
+    }
 
     setLoading(true);
     setError('');

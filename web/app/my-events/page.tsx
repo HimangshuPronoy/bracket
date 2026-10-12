@@ -29,17 +29,39 @@ export default function MyEventsPage() {
       .from('registrations')
       .select('*, tournament:tournaments(*)')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
+      .order('registered_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error fetching registrations:', error);
+          setLoading(false);
+          return;
+        }
         setRegistrations(
-          (data || []).map((r: any) => ({
-            ...r,
-            tournament: mapTournament(r.tournament),
-          }))
+          (data || [])
+            .filter((r: any) => !!r.tournament)
+            .map((r: any) => ({
+              ...r,
+              tournament: mapTournament(r.tournament),
+            }))
         );
         setLoading(false);
       });
   }, [user, authLoading]);
+
+  const handleWithdraw = async (regId: string, tourName: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to withdraw from "${tourName}"?`)) return;
+    const { error } = await supabase
+      .from('registrations')
+      .update({ status: 'cancelled', event_ids: [] })
+      .eq('id', regId);
+    if (error) {
+      alert(`Failed to withdraw: ${error.message}`);
+    } else {
+      setRegistrations(prev => prev.map(r => r.id === regId ? { ...r, status: 'cancelled' } : r));
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -116,11 +138,11 @@ export default function MyEventsPage() {
                 {/* Status badge */}
                 <div style={{ position: 'absolute', top: 12, left: 12 }}>
                   <span style={{
-                    background: status === 'confirmed' ? 'var(--success)' : '#3B75DF',
+                    background: status === 'confirmed' ? 'var(--success)' : status === 'cancelled' ? 'var(--danger)' : '#3B75DF',
                     color: status === 'confirmed' ? '#000' : '#fff',
                     padding: '4px 10px', fontSize: 11, fontWeight: 700, borderRadius: 4
                   }}>
-                    {status === 'confirmed' ? '✓ Confirmed' : status?.toUpperCase() ?? 'REGISTERED'}
+                    {status === 'confirmed' ? '✓ Confirmed' : status === 'cancelled' ? '✕ Cancelled' : status?.toUpperCase() ?? 'REGISTERED'}
                   </span>
                 </div>
               </div>
@@ -141,7 +163,32 @@ export default function MyEventsPage() {
                       {tournament.isOnline ? 'Online' : 'In-Person'}
                     </span>
                   </div>
-                  <span className="text-sm" style={{ color: 'var(--accent)', fontWeight: 700 }}>View Details →</span>
+                  <div className="flex items-center gap-2">
+                    {status === 'confirmed' && (
+                      <>
+                        <span
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.location.href = `/tournament/${tournament.id}/register`;
+                          }}
+                          className="btn btn-secondary btn-sm"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Change Events
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleWithdraw(id, tournament.name, e)}
+                          className="btn btn-ghost btn-sm text-danger"
+                          style={{ color: 'var(--danger)' }}
+                        >
+                          Withdraw
+                        </button>
+                      </>
+                    )}
+                    <span className="text-sm" style={{ color: 'var(--accent)', fontWeight: 700, marginLeft: 8 }}>View Details →</span>
+                  </div>
                 </div>
               </div>
             </Link>

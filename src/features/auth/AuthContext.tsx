@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isSupabaseConfigured) {
       console.warn("Supabase is not configured!");
-      setIsLoading(false);
+      queueMicrotask(() => setIsLoading(false));
       return;
     }
 

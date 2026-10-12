@@ -16,17 +16,29 @@ export default function ProfilePage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ display_name: '', handle: '', avatar_url: '' });
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    const { error } = await supabase.from('profiles').update({
-      display_name: editForm.display_name,
-      handle: editForm.handle,
-      avatar_url: editForm.avatar_url
-    }).eq('id', user.id);
-    if (!error) {
-      setProfile({ ...profile, ...editForm });
+    setSaveLoading(true);
+    setSaveError('');
+    try {
+      const { data, error } = await supabase.from('profiles').upsert({
+        id: user.id,
+        display_name: editForm.display_name.trim() || null,
+        handle: editForm.handle.trim() || null,
+        avatar_url: editForm.avatar_url.trim() || null,
+        updated_at: new Date().toISOString(),
+      }).select().single();
+
+      if (error) throw error;
+      setProfile(data);
       setIsEditing(false);
+    } catch (err: any) {
+      setSaveError(err.message || 'Failed to update profile.');
+    } finally {
+      setSaveLoading(false);
     }
   };
 
@@ -39,7 +51,14 @@ export default function ProfilePage() {
 
     async function fetchData() {
       const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user!.id).single();
-      if (profileData) setProfile(profileData);
+      if (profileData) {
+        setProfile(profileData);
+        setEditForm({
+          display_name: profileData.display_name || '',
+          handle: profileData.handle || '',
+          avatar_url: profileData.avatar_url || '',
+        });
+      }
 
       const { count: enteredCount } = await supabase.from('registrations').select('*', { count: 'exact', head: true }).eq('user_id', user!.id);
       const { data: rankingsData } = await supabase.from('rankings').select('placement, wins').eq('user_id', user!.id);
@@ -111,6 +130,11 @@ export default function ProfilePage() {
           {isEditing ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
               <h2 className="text-display" style={{ fontSize: 24, marginBottom: 8 }}>Edit Profile</h2>
+              {saveError && (
+                <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(255, 69, 58, 0.1)', color: 'var(--danger)', fontSize: 14 }}>
+                  {saveError}
+                </div>
+              )}
               <div className="input-group">
                 <label className="input-label">Display Name</label>
                 <input 
@@ -136,8 +160,10 @@ export default function ProfilePage() {
                 />
               </div>
               <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
-                <button onClick={handleSaveProfile} className="btn btn-primary">Save Changes</button>
-                <button onClick={() => setIsEditing(false)} className="btn btn-ghost">Cancel</button>
+                <button onClick={handleSaveProfile} className="btn btn-primary" disabled={saveLoading}>
+                  {saveLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button onClick={() => setIsEditing(false)} className="btn btn-ghost" disabled={saveLoading}>Cancel</button>
               </div>
             </div>
           ) : (
