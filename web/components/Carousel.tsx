@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import TournamentCard from './TournamentCard';
+import { useI18n } from '@/lib/i18n';
 
 interface Props {
   title: string;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function Carousel({ title, tournaments, viewAllHref }: Props) {
+  const { t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -75,7 +77,7 @@ export default function Carousel({ title, tournaments, viewAllHref }: Props) {
             style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600, textDecoration: 'none' }}
             className="hover-text-primary"
           >
-            View all →
+            {t('home.viewAll')}
           </Link>
         </div>
       </div>

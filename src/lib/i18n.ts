@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
+import * as SecureStore from 'expo-secure-store';
 
 const resources = {
   en: {
@@ -178,5 +179,14 @@ i18n
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
   });
+
+// Restore saved language if previously chosen by user
+SecureStore.getItemAsync('user_selected_language')
+  .then((saved) => {
+    if (saved && resources[saved as keyof typeof resources]) {
+      i18n.changeLanguage(saved);
+    }
+  })
+  .catch(() => {});
 
 export default i18n;

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase, mapTournament, type MappedTournament } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
+import { useI18n } from '@/lib/i18n';
 
 type Registration = {
   id: string;
@@ -15,6 +16,7 @@ type Registration = {
 
 export default function MyEventsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +53,7 @@ export default function MyEventsPage() {
   const handleWithdraw = async (regId: string, tourName: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!window.confirm(`Are you sure you want to withdraw from "${tourName}"?`)) return;
+    if (!window.confirm(t('myEvents.confirmWithdraw') || `Are you sure you want to withdraw from "${tourName}"?`)) return;
     const { error } = await supabase
       .from('registrations')
       .update({ status: 'cancelled', event_ids: [] })
@@ -66,7 +68,7 @@ export default function MyEventsPage() {
   if (authLoading || loading) {
     return (
       <main className="container fade-in" style={{ paddingTop: 80, textAlign: 'center' }}>
-        <p className="text-secondary">Loading...</p>
+        <p className="text-secondary">{t('common.loading')}</p>
       </main>
     );
   }
@@ -75,11 +77,10 @@ export default function MyEventsPage() {
     return (
       <main className="container fade-in" style={{ paddingTop: 80, maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-        <h1 className="text-display" style={{ fontSize: 28, marginBottom: 12 }}>Sign in to view your events</h1>
-        <p className="text-secondary mb-6">Log in or create an account to track your tournament registrations.</p>
+        <h1 className="text-display" style={{ fontSize: 28, marginBottom: 12 }}>{t('settings.accountEmpty')}</h1>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24 }}>
-          <Link href="/login" className="btn btn-primary btn-lg">Log In</Link>
-          <Link href="/signup" className="btn btn-secondary btn-lg">Sign Up</Link>
+          <Link href="/login" className="btn btn-primary btn-lg">{t('nav.logIn')}</Link>
+          <Link href="/signup" className="btn btn-secondary btn-lg">{t('nav.signUp')}</Link>
         </div>
       </main>
     );
@@ -90,9 +91,9 @@ export default function MyEventsPage() {
       <div className="page-hero" style={{ paddingBottom: 24 }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-display">My Events</h1>
+            <h1 className="text-display">{t('myEvents.title')}</h1>
             <p className="text-body text-secondary mt-1">
-              Tournaments you&apos;ve registered for.
+              {t('myEvents.subtitle')}
             </p>
           </div>
           <div style={{ fontSize: 48, opacity: 0.8 }}>📅</div>
@@ -102,9 +103,9 @@ export default function MyEventsPage() {
       {registrations.length === 0 ? (
         <div className="empty-state card mt-6">
           <div className="empty-icon">📅</div>
-          <h2 className="empty-title">No events yet</h2>
-          <p className="empty-desc">You haven&apos;t registered for any tournaments. Head to Discover to find one.</p>
-          <Link href="/" className="btn btn-primary mt-4">Browse Tournaments →</Link>
+          <h2 className="empty-title">{t('myEvents.emptyTitle')}</h2>
+          <p className="empty-desc">{t('myEvents.emptyDesc')}</p>
+          <Link href="/" className="btn btn-primary mt-4">{t('myEvents.browseTournaments')} →</Link>
         </div>
       ) : (
         <div className="flex-col gap-6">
@@ -183,7 +184,7 @@ export default function MyEventsPage() {
                           className="btn btn-ghost btn-sm text-danger"
                           style={{ color: 'var(--danger)' }}
                         >
-                          Withdraw
+                          {t('myEvents.withdraw')}
                         </button>
                       </>
                     )}

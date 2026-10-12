@@ -5,9 +5,11 @@ import { useEffect, useState } from 'react';
 import { supabase, mapTournament, type MappedTournament } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useI18n } from '@/lib/i18n';
 
 export default function OrganizerDashboardPage() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const [myTournaments, setMyTournaments] = useState<MappedTournament[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,7 @@ export default function OrganizerDashboardPage() {
   if (authLoading || loading) {
     return (
       <main className="container fade-in" style={{ paddingTop: 80, textAlign: 'center' }}>
-        <p className="text-secondary">Loading...</p>
+        <p className="text-secondary">{t('common.loading')}</p>
       </main>
     );
   }
@@ -79,11 +81,10 @@ export default function OrganizerDashboardPage() {
     return (
       <main className="container fade-in" style={{ paddingTop: 80, maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-        <h1 className="text-display" style={{ fontSize: 28, marginBottom: 12 }}>Sign in to access Organizer HQ</h1>
-        <p className="text-secondary mb-6">Log in to manage your tournaments, view analytics, and handle registrations.</p>
+        <h1 className="text-display" style={{ fontSize: 28, marginBottom: 12 }}>{t('settings.accountEmpty')}</h1>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24 }}>
-          <Link href="/login" className="btn btn-primary btn-lg">Log In</Link>
-          <Link href="/signup" className="btn btn-secondary btn-lg">Sign Up</Link>
+          <Link href="/login" className="btn btn-primary btn-lg">{t('nav.logIn')}</Link>
+          <Link href="/signup" className="btn btn-secondary btn-lg">{t('nav.signUp')}</Link>
         </div>
       </main>
     );
@@ -95,13 +96,13 @@ export default function OrganizerDashboardPage() {
       <div className="page-hero" style={{ paddingBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 className="text-display">Organizer HQ</h1>
+            <h1 className="text-display">{t('organizer.title')}</h1>
             <p className="text-body text-secondary mt-3">
-              Actionable insights and management tools for your tournaments.
+              {t('organizer.subtitle')}
             </p>
           </div>
           <Link href="/create" className="btn btn-primary btn-lg">
-            + New Event
+            {t('organizer.createTournament')}
           </Link>
         </div>
       </div>
@@ -109,12 +110,12 @@ export default function OrganizerDashboardPage() {
       {myTournaments.length === 0 ? (
         <div className="empty-state card" style={{ marginTop: 32, padding: 64 }}>
           <div className="empty-icon" style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
-          <h2 className="text-title">No Events Yet</h2>
+          <h2 className="text-title">{t('organizer.noTournaments')}</h2>
           <p className="text-body text-secondary mt-2 mb-6" style={{ maxWidth: 400, margin: '8px auto 24px' }}>
-            Create your first tournament to start tracking registrations, managing brackets, and viewing analytics.
+            {t('organizer.startFirst')}
           </p>
           <Link href="/create" className="btn btn-primary btn-lg" style={{ display: 'inline-flex' }}>
-            + New Event
+            {t('organizer.createTournament')}
           </Link>
         </div>
       ) : (
@@ -143,11 +144,11 @@ export default function OrganizerDashboardPage() {
 
           {/* Active Tournaments */}
           <section>
-            <h2 className="text-title mb-4">My Tournaments</h2>
+            <h2 className="text-title mb-4">{t('organizer.tournaments')}</h2>
             <div className="card" style={{ padding: 0 }}>
-              {myTournaments.map((t, i) => (
+              {myTournaments.map((tItem, i) => (
                 <div
-                  key={t.id}
+                  key={tItem.id}
                   style={{
                     display: 'flex',
                     flexWrap: 'wrap',
@@ -159,59 +160,59 @@ export default function OrganizerDashboardPage() {
                   className="hover-bg-elevated"
                 >
                   <img
-                    src={t.imageUrl}
-                    alt={t.name}
+                    src={tItem.imageUrl}
+                    alt={tItem.name}
                     style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 'var(--radius-md)' }}
                   />
 
                     <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <h3 className="text-headline">{t.name}</h3>
+                      <h3 className="text-headline">{tItem.name}</h3>
                       <span className={`badge ${
-                        t.status === 'registration_open' ? 'badge-success' :
-                        t.status === 'in_progress' ? 'badge-accent' :
-                        t.status === 'cancelled' ? 'badge-danger' :
+                        tItem.status === 'registration_open' ? 'badge-success' :
+                        tItem.status === 'in_progress' ? 'badge-accent' :
+                        tItem.status === 'cancelled' ? 'badge-danger' :
                         'badge-neutral'
                       }`}>
-                        {t.status === 'registration_open' ? 'Open' :
-                         t.status === 'in_progress' ? 'In Progress' :
-                         t.status === 'completed' ? 'Completed' :
-                         t.status === 'cancelled' ? 'Cancelled' :
+                        {tItem.status === 'registration_open' ? 'Open' :
+                         tItem.status === 'in_progress' ? 'In Progress' :
+                         tItem.status === 'completed' ? 'Completed' :
+                         tItem.status === 'cancelled' ? 'Cancelled' :
                          'Draft'}
                       </span>
                     </div>
-                    <p className="text-sm text-secondary">{t.date} • {t.game}</p>
-                    <p className="text-sm text-secondary mt-1">{t.isOnline ? '🌐 Online' : `📍 ${t.location}`}</p>
+                    <p className="text-sm text-secondary">{tItem.date} • {tItem.game}</p>
+                    <p className="text-sm text-secondary mt-1">{tItem.isOnline ? '🌐 Online' : `📍 ${tItem.location}`}</p>
                   </div>
 
                   <div className="flex-col gap-2">
                     <div className="flex gap-2">
                       <Link
-                        href={`/tournament/${t.id}`}
+                        href={`/tournament/${tItem.id}`}
                         className="btn btn-secondary btn-sm"
                         style={{ textAlign: 'center', textDecoration: 'none' }}
                       >
                         View
                       </Link>
                       <Link
-                        href={`/tournament/${t.id}/edit`}
+                        href={`/tournament/${tItem.id}/edit`}
                         className="btn btn-secondary btn-sm"
                         style={{ textAlign: 'center', textDecoration: 'none' }}
                       >
-                        Edit
+                        {t('common.edit')}
                       </Link>
                       <button
                         type="button"
-                        onClick={() => handleDelete(t.id, t.name)}
+                        onClick={() => handleDelete(tItem.id, tItem.name)}
                         className="btn btn-ghost btn-sm text-danger"
                         style={{ color: 'var(--danger)' }}
                       >
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
-                    {(t.status === 'draft' || !t.registrationOpen) && t.status !== 'completed' && t.status !== 'cancelled' && t.status !== 'in_progress' && (
+                    {(tItem.status === 'draft' || !tItem.registrationOpen) && tItem.status !== 'completed' && tItem.status !== 'cancelled' && tItem.status !== 'in_progress' && (
                       <button 
-                        onClick={() => handlePublish(t.id)}
+                        onClick={() => handlePublish(tItem.id)}
                         className="btn btn-primary btn-sm"
                         style={{ width: '100%' }}
                       >

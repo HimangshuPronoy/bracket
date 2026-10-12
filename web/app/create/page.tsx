@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { createTournament } from '@/lib/api/tournament';
+import { useI18n } from '@/lib/i18n';
 
 const GAMES = [
   'Super Fighter V', 'Smash Bros. Ultimate', 'Fighter Z',
@@ -23,6 +24,7 @@ const FORMATS = [
 export default function CreateEventPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
 
   // Tournament fields
   const [name, setName] = useState('');
@@ -123,10 +125,10 @@ export default function CreateEventPage() {
   return (
     <main className="container fade-in pt-8 pb-20 max-w-lg mx-auto">
       <div className="page-hero mb-6">
-        <div className="section-tag">Organizer Tools</div>
-        <h1 className="text-display">Create Tournament</h1>
+        <div className="section-tag">{t('organizer.title')}</div>
+        <h1 className="text-display">{t('create.title')}</h1>
         <p className="text-body text-secondary mt-3">
-          Set up your tournament, configure brackets, and start accepting registrations.
+          {t('create.subtitle')}
         </p>
       </div>
 
@@ -140,11 +142,11 @@ export default function CreateEventPage() {
 
         {/* ── Tournament Info ── */}
         <div className="card card-p32">
-          <h2 className="text-title mb-6" style={{ fontSize: 20 }}>Tournament Info</h2>
+          <h2 className="text-title mb-6" style={{ fontSize: 20 }}>{t('tournament.overview')}</h2>
           <div className="flex-col gap-4">
 
             <div className="input-group">
-              <label className="input-label">Tournament Name *</label>
+              <label className="input-label">{t('create.name')} *</label>
               <input
                 type="text" className="input"
                 placeholder="e.g. Neo City Clash 2026"
@@ -154,7 +156,7 @@ export default function CreateEventPage() {
 
             <div className="grid-2">
               <div className="input-group">
-                <label className="input-label">Game *</label>
+                <label className="input-label">{t('create.game')} *</label>
                 <select
                   className="input select-input"
                   value={game}
@@ -418,14 +420,14 @@ export default function CreateEventPage() {
 
         {/* ── Actions ── */}
         <div className="flex justify-end gap-3">
-          <Link href="/organizer" className="btn btn-ghost">Cancel</Link>
+          <Link href="/organizer" className="btn btn-ghost">{t('common.cancel')}</Link>
           <button
             type="submit"
             className="btn btn-primary btn-lg"
             disabled={loading}
             style={{ minWidth: 180, justifyContent: 'center' }}
           >
-            {loading ? 'Publishing...' : '🚀 Publish Tournament'}
+            {loading ? t('common.loading') : `🚀 ${t('create.createBtn')}`}
           </button>
         </div>
 

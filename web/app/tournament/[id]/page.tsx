@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { TournamentSidebar } from '@/components/TournamentSidebar';
 import { TournamentEventsList } from '@/components/TournamentEventsList';
 import { ClientTournamentLoader } from '@/components/ClientTournamentLoader';
+import { TournamentQuickInfo } from '@/components/TournamentQuickInfo';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -126,38 +127,15 @@ export default async function TournamentPage({ params }: Props) {
           {/* Left Column */}
           <div>
             {/* Quick Info Grid */}
-            <div className="grid-2 mb-8 gap-3">
-              <div className="card card-p16">
-                <div className="text-sm text-secondary mb-1">Date</div>
-                <div className="text-headline">{tournament.date}</div>
-              </div>
-              <div className="card card-p16">
-                <div className="text-sm text-secondary mb-1">{tournament.isOnline ? 'Location' : (tournament.locations.length > 1 ? 'Locations' : 'Venue')}</div>
-                <div className="text-headline">
-                  {tournament.isOnline ? tournament.location : (
-                    tournament.locations.length > 0 
-                      ? tournament.locations.join(' • ') 
-                      : tournament.location
-                  )}
-                </div>
-              </div>
-              {tournament.prizePool && (
-                <div className="card card-p16">
-                  <div className="text-sm text-secondary mb-1">Prize Pool</div>
-                  <div className="text-headline" style={{ color: 'var(--warning)' }}>{tournament.prizePool}</div>
-                </div>
-              )}
-              <div className="card card-p16">
-                <div className="text-sm text-secondary mb-1">Entry Fee</div>
-                <div className="text-headline">
-                  {tournament.tickets.length > 0 ? (
-                    `From $${tournament.registrationFee} USD`
-                  ) : (
-                    tournament.registrationFee === 0 ? <span className="text-success">Free</span> : `$${tournament.registrationFee} USD`
-                  )}
-                </div>
-              </div>
-            </div>
+            <TournamentQuickInfo
+              date={tournament.date}
+              isOnline={tournament.isOnline}
+              locations={tournament.locations}
+              location={tournament.location}
+              prizePool={tournament.prizePool}
+              registrationFee={tournament.registrationFee}
+              tickets={tournament.tickets}
+            />
 
             {/* Markdown Description */}
             {tournament.descriptionMarkdown && (

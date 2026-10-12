@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
+import { useI18n } from '@/lib/i18n';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -15,6 +16,7 @@ export default function RegisterPage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
   
   const [tournament, setTournament] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
@@ -159,7 +161,7 @@ export default function RegisterPage({ params }: Props) {
 
       {!isRegistrationOpen && (
         <div className="card mb-6" style={{ padding: 16, borderLeft: '4px solid var(--warning)', backgroundColor: 'var(--tint-bg)' }}>
-          <div className="font-semibold text-warning mb-1">Registration is Closed</div>
+          <div className="font-semibold text-warning mb-1">{t('tournament.registrationClosed')}</div>
           <p className="text-sm text-secondary">
             This tournament has status &quot;{tournament.status.replace('_', ' ')}&quot;. New registrations or changes cannot be submitted.
           </p>
@@ -169,7 +171,7 @@ export default function RegisterPage({ params }: Props) {
       {isExistingRegistration && isRegistrationOpen && (
         <div className="card mb-6" style={{ padding: 14, borderLeft: '4px solid var(--accent)', backgroundColor: 'var(--tint-bg)' }}>
           <p className="text-sm">
-            <strong>You are already registered.</strong> You can update your selected events below.
+            <strong>{t('tournament.registered')}</strong> You can update your selected events below.
           </p>
         </div>
       )}
@@ -180,7 +182,7 @@ export default function RegisterPage({ params }: Props) {
           <h2 className="text-headline mb-2">Ticket Option</h2>
           <p className="text-sm text-secondary mb-4">Select your registration pass type.</p>
           <div className="flex-col gap-2">
-            {tickets.map((t: any, idx: number) => (
+            {tickets.map((tItem: any, idx: number) => (
               <label 
                 key={idx}
                 className={`event-checkbox ${selectedTicketIndex === idx ? 'selected' : ''}`}
@@ -193,10 +195,10 @@ export default function RegisterPage({ params }: Props) {
                   onChange={() => setSelectedTicketIndex(idx)}
                 />
                 <div style={{ flex: 1 }}>
-                  <div className="font-semibold">{t.name}</div>
+                  <div className="font-semibold">{tItem.name}</div>
                 </div>
                 <div className="font-mono font-bold">
-                  {t.price > 0 ? `$${t.price}` : 'Free'}
+                  {tItem.price > 0 ? `$${tItem.price}` : t('tournament.free')}
                 </div>
               </label>
             ))}
@@ -204,7 +206,7 @@ export default function RegisterPage({ params }: Props) {
         </div>
       )}
 
-      <h2 className="text-headline mb-2">Select Events</h2>
+      <h2 className="text-headline mb-2">{t('tournament.events')}</h2>
       <p className="text-sm text-secondary mb-6">
         Choose one or more events to compete in. You can register for multiple events.
       </p>
@@ -261,7 +263,7 @@ export default function RegisterPage({ params }: Props) {
 
       <div className="flex" style={{ gap: 12 }}>
         <Link href={`/tournament/${id}`} className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>
-          Cancel
+          {t('common.cancel')}
         </Link>
         <button
           className="btn btn-primary btn-lg"
@@ -270,10 +272,10 @@ export default function RegisterPage({ params }: Props) {
           onClick={handleRegister}
         >
           {submitting
-            ? 'Saving…'
+            ? t('common.loading')
             : isExistingRegistration
-              ? (selectedEvents.length === 0 ? 'Withdraw from Tournament' : 'Update Registration')
-              : 'Complete Registration →'}
+              ? (selectedEvents.length === 0 ? t('tournament.withdraw') : t('tournament.registered'))
+              : `${t('tournament.registerNow')} →`}
         </button>
       </div>
 
@@ -286,7 +288,7 @@ export default function RegisterPage({ params }: Props) {
             disabled={submitting}
             onClick={handleWithdraw}
           >
-            Withdraw from Tournament
+            {t('tournament.withdraw')}
           </button>
         </div>
       )}

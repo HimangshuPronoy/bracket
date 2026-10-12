@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { useI18n } from '@/lib/i18n';
 
 interface EventItem {
   id: string;
@@ -19,6 +20,7 @@ interface TournamentEventsListProps {
 
 export function TournamentEventsList({ tournamentId, events }: TournamentEventsListProps) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [registration, setRegistration] = useState<{ id: string; event_ids: string[]; status: string } | null>(null);
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function TournamentEventsList({ tournamentId, events }: TournamentEventsL
 
   return (
     <div>
-      <h2 className="text-display mb-4" style={{ fontSize: 28 }}>Events</h2>
+      <h2 className="text-display mb-4" style={{ fontSize: 28 }}>{t('tournament.events')}</h2>
       {events.length === 0 ? (
         <p className="text-secondary">No events have been created for this tournament yet.</p>
       ) : (
@@ -51,10 +53,10 @@ export function TournamentEventsList({ tournamentId, events }: TournamentEventsL
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-headline">{event.name}</span>
-                    {registered && <span className="badge badge-success">✓ Registered</span>}
+                    {registered && <span className="badge badge-success">✓ {t('tournament.registered')}</span>}
                   </div>
                   <div className="flex items-center gap-3 text-sm text-secondary">
-                    <span>👥 {event.entrantsCount} entrants</span>
+                    <span>👥 {event.entrantsCount} {t('tournament.entrants')}</span>
                     <span>•</span>
                     <span>{event.format}</span>
                   </div>
@@ -63,7 +65,7 @@ export function TournamentEventsList({ tournamentId, events }: TournamentEventsL
                   href={`/tournament/${tournamentId}/event/${event.id}/bracket`}
                   className="btn btn-secondary btn-sm"
                 >
-                  View Bracket →
+                  {t('tournament.viewBracket')}
                 </Link>
               </div>
             );

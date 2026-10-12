@@ -1,7 +1,7 @@
 /** @type {import('jest').Config} */
 module.exports = {
   displayName: 'bracket-engine',
-  testMatch: ['<rootDir>/__tests__/bracket.test.ts'],
+  testMatch: ['<rootDir>/__tests__/**/*.test.ts'],
   testEnvironment: 'node',
   // Disable Haste module system (RN preset enables it, which crawls node_modules forever)
   haste: undefined,

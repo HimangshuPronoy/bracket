@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { useI18n } from '@/lib/i18n';
 
 interface EventItem {
   id: string;
@@ -20,6 +21,7 @@ interface TournamentSidebarProps {
 
 export function TournamentSidebar({ tournamentId, organizerId, registrationFee, tickets = [], events }: TournamentSidebarProps) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [registration, setRegistration] = useState<{ id: string; event_ids: string[]; status: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,7 +48,7 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
   if (loading) {
     return (
       <div className="card card-p24 text-center">
-        <p className="text-sm text-secondary">Loading…</p>
+        <p className="text-sm text-secondary">{t('common.loading')}</p>
       </div>
     );
   }
@@ -55,13 +57,13 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
     <div className="card card-p24">
       {isOrganizer ? (
         <div>
-          <h3 className="text-headline mb-2">Organizer Dashboard</h3>
+          <h3 className="text-headline mb-2">{t('tournament.manageTournament')}</h3>
           <p className="text-sm text-secondary mb-4">Manage this tournament and its settings.</p>
           <Link
             href={`/tournament/${tournamentId}/edit`}
             className="btn btn-primary btn-block mb-3"
           >
-            Edit Tournament
+            {t('tournament.editTournament')}
           </Link>
           {events.length > 0 && (
             <>
@@ -93,13 +95,12 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
         <div>
           <div className="text-center mb-6">
             <div style={{ fontSize: 40, marginBottom: 8 }}>✅</div>
-            <h3 className="text-headline text-success">You're Registered!</h3>
+            <h3 className="text-headline text-success">{t('tournament.registered')}</h3>
             <p className="text-sm text-secondary mt-2">
-              You're in {registration?.event_ids?.length || 0} event{registration?.event_ids?.length !== 1 ? 's' : ''}.
+              {t('tournament.registeredDesc')}
             </p>
           </div>
           <div className="divider" />
-          <p className="text-sm text-secondary mb-4">View live brackets for your events:</p>
           <div className="flex-col gap-2 mb-4">
             {events
               .filter(e => registration?.event_ids?.includes(e.id))
@@ -109,7 +110,7 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
                   href={`/tournament/${tournamentId}/event/${e.id}/bracket`}
                   className="btn btn-secondary btn-block"
                 >
-                  {e.name} Bracket →
+                  {e.name} {t('tournament.viewBracket')}
                 </Link>
               ))}
           </div>
@@ -124,7 +125,7 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
           <button
             onClick={async () => {
               if (!registration) return;
-              if (!window.confirm('Are you sure you want to withdraw from this tournament? Your registration for all events will be cancelled.')) return;
+              if (!window.confirm(t('myEvents.confirmWithdraw'))) return;
               const { error } = await supabase
                 .from('registrations')
                 .update({ status: 'cancelled', event_ids: [] })
@@ -138,20 +139,20 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
             className="btn btn-ghost btn-sm btn-block text-danger"
             style={{ color: 'var(--danger)' }}
           >
-            Withdraw from Tournament
+            {t('tournament.withdraw')}
           </button>
         </div>
       ) : (
         <div>
-          <h3 className="text-headline mb-2">Register Now</h3>
+          <h3 className="text-headline mb-2">{t('tournament.registerNow')}</h3>
           {tickets.length > 0 ? (
             <div className="flex-col gap-2 mb-4 mt-3">
               <p className="text-sm text-secondary mb-2">Available Tickets:</p>
-              {tickets.map((t, i) => (
+              {tickets.map((tItem, i) => (
                 <div key={i} className="ticket-item">
-                  <span className="text-sm font-semibold">{t.name}</span>
+                  <span className="text-sm font-semibold">{tItem.name}</span>
                   <span className="badge badge-accent ticket-price-badge">
-                    ${t.price}
+                    ${tItem.price}
                   </span>
                 </div>
               ))}
@@ -169,7 +170,7 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
             <div>
               <p className="text-sm text-secondary mb-4">You must be signed in to register.</p>
               <Link href="/login" className="btn btn-primary btn-block">
-                Log In to Register
+                {t('nav.logIn')}
               </Link>
             </div>
           ) : (
@@ -177,7 +178,7 @@ export function TournamentSidebar({ tournamentId, organizerId, registrationFee, 
               href={`/tournament/${tournamentId}/register`}
               className="btn btn-primary btn-block"
             >
-              {registrationFee === 0 ? 'Register — Free' : `Register — $${registrationFee}`}
+              {registrationFee === 0 ? `${t('tournament.registerNow')} — ${t('tournament.free')}` : `${t('tournament.registerNow')} — $${registrationFee}`}
             </Link>
           )}
         </div>

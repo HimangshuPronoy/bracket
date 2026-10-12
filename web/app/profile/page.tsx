@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useI18n } from '@/lib/i18n';
 
 export default function ProfilePage() {
   const { user, loading: authLoading, signOut } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
 
   const [profile, setProfile] = useState<any>(null);
@@ -129,14 +131,14 @@ export default function ProfilePage() {
         }}>
           {isEditing ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <h2 className="text-display" style={{ fontSize: 24, marginBottom: 8 }}>Edit Profile</h2>
+              <h2 className="text-display" style={{ fontSize: 24, marginBottom: 8 }}>{t('profile.title')}</h2>
               {saveError && (
                 <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(255, 69, 58, 0.1)', color: 'var(--danger)', fontSize: 14 }}>
                   {saveError}
                 </div>
               )}
               <div className="input-group">
-                <label className="input-label">Display Name</label>
+                <label className="input-label">{t('profile.displayName')}</label>
                 <input 
                   className="input" 
                   value={editForm.display_name} 
@@ -144,7 +146,7 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="input-group">
-                <label className="input-label">Handle (username)</label>
+                <label className="input-label">{t('profile.handle')}</label>
                 <input 
                   className="input" 
                   value={editForm.handle} 
@@ -161,9 +163,9 @@ export default function ProfilePage() {
               </div>
               <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
                 <button onClick={handleSaveProfile} className="btn btn-primary" disabled={saveLoading}>
-                  {saveLoading ? 'Saving...' : 'Save Changes'}
+                  {saveLoading ? t('common.loading') : t('profile.save')}
                 </button>
-                <button onClick={() => setIsEditing(false)} className="btn btn-ghost" disabled={saveLoading}>Cancel</button>
+                <button onClick={() => setIsEditing(false)} className="btn btn-ghost" disabled={saveLoading}>{t('common.cancel')}</button>
               </div>
             </div>
           ) : (
@@ -204,10 +206,10 @@ export default function ProfilePage() {
                     setEditForm({ display_name: profile?.display_name || '', handle: profile?.handle || '', avatar_url: profile?.avatar_url || '' });
                     setIsEditing(true); 
                   }} className="btn btn-secondary">
-                    Edit Profile
+                    {t('common.edit')}
                   </button>
                   <button onClick={() => { signOut(); router.push('/'); }} className="btn btn-ghost" style={{ color: 'var(--danger)' }}>
-                    Log Out
+                    {t('nav.signOut')}
                   </button>
                 </div>
               </div>

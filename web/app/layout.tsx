@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Nav from '@/components/Nav';
 import { AuthProvider } from '@/lib/AuthContext';
+import { I18nProvider } from '@/lib/i18n';
 
 export const metadata: Metadata = {
   title: 'Bracket — Tournament Platform',
@@ -13,8 +14,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <AuthProvider>
-          <Nav />
-          <div className="page-wrapper">{children}</div>
+          <I18nProvider>
+            <Nav />
+            <div className="page-wrapper">{children}</div>
+          </I18nProvider>
         </AuthProvider>
       </body>
     </html>

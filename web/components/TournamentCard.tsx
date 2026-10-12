@@ -1,9 +1,15 @@
+'use client';
+
 import Link from 'next/link';
+import { useI18n } from '@/lib/i18n';
+
 interface Props {
   tournament: any;
 }
 
 export default function TournamentCard({ tournament }: Props) {
+  const { t } = useI18n();
+
   return (
     <Link href={`/tournament/${tournament.id}`} className="card card-interactive" style={{ display: 'block', padding: 0, textDecoration: 'none' }}>
       {/* Thumbnail Container */}
@@ -17,11 +23,11 @@ export default function TournamentCard({ tournament }: Props) {
         <div style={{ position: 'absolute', bottom: 12, left: 12 }}>
           {tournament.registrationOpen ? (
             <span style={{ background: 'var(--success)', color: '#000', padding: '4px 8px', fontSize: 12, fontWeight: 700, borderRadius: 4 }}>
-              Registration Open
+              {t('tournament.registrationOpen')}
             </span>
           ) : (
             <span style={{ background: 'var(--danger)', color: '#fff', padding: '4px 8px', fontSize: 12, fontWeight: 700, borderRadius: 4 }}>
-              Registration Closed
+              {t('tournament.registrationClosed')}
             </span>
           )}
         </div>
@@ -56,7 +62,7 @@ export default function TournamentCard({ tournament }: Props) {
           </div>
           {tournament.registrationFee === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--success)', fontSize: 13, fontWeight: 600 }}>
-              ✅ Free Entry
+              ✅ {t('tournament.freeEntry')}
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13 }}>

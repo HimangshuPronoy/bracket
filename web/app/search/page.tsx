@@ -4,8 +4,10 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import TournamentCard from '@/components/TournamentCard';
 import { supabase, mapTournament, type MappedTournament } from '@/lib/supabase';
+import { useI18n } from '@/lib/i18n';
 
 function SearchContent() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState<MappedTournament[]>([]);
@@ -61,17 +63,17 @@ function SearchContent() {
   return (
     <main className="container fade-in" style={{ paddingTop: 40, paddingBottom: 80 }}>
       <div className="page-hero" style={{ paddingBottom: 32 }}>
-        <h1 className="text-display">Search Results</h1>
+        <h1 className="text-display">{t('search.title')}</h1>
         <p className="text-body text-secondary mt-2">
-          {loading ? 'Searching...' : `${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"`}
+          {loading ? t('common.loading') : `${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"`}
         </p>
       </div>
 
       {!loading && results.length === 0 ? (
         <div className="empty-state card">
           <div className="empty-icon">🔍</div>
-          <h2 className="empty-title">No tournaments found</h2>
-          <p className="empty-desc">Try adjusting your search query or exploring the Discover page.</p>
+          <h2 className="empty-title">{t('search.noResults')}</h2>
+          <p className="empty-desc">{t('search.noResultsDesc')}</p>
         </div>
       ) : (
         <div className="grid-3">
