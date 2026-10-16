@@ -62,6 +62,15 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
           />
+          <Pressable 
+            onPress={() => router.push({ pathname: '/(auth)/forgot-password', params: email ? { email } : {} } as any)} 
+            hitSlop={8}
+            style={{ alignSelf: 'flex-end', marginTop: -spacing.xs }}
+          >
+            <Text variant="subheadline" style={{ color: colors.secondaryLabel, textDecorationLine: 'underline' }}>
+              Forgot password?
+            </Text>
+          </Pressable>
           <Button 
             label="Log In" 
             onPress={handleAuth} 

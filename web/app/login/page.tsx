@@ -88,7 +88,11 @@ export default function LoginPage() {
               <input type="checkbox" style={{ width: 16, height: 16, accentColor: '#3B75DF' }} />
               <span className="text-sm text-secondary">Remember me</span>
             </div>
-            <Link href="#" className="text-sm" style={{ color: '#3B75DF', textDecoration: 'none' }}>
+            <Link 
+              href={email ? `/forgot-password?email=${encodeURIComponent(email)}` : '/forgot-password'} 
+              className="text-sm" 
+              style={{ color: '#3B75DF', textDecoration: 'none' }}
+            >
               Forgot password?
             </Link>
           </div>
