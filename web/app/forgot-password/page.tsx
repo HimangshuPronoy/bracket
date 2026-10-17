@@ -21,7 +21,8 @@ function ForgotPasswordContent() {
     setError('');
 
     try {
-      const redirectTo = `${window.location.origin}/reset-password`;
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || (typeof window !== 'undefined' ? window.location.origin : '');
+      const redirectTo = `${siteUrl}/reset-password`;
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo,
       });

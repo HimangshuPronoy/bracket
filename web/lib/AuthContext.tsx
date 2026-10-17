@@ -24,16 +24,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If Supabase redirected to the root Site URL with a recovery hash, forward to /reset-password
+    if (typeof window !== 'undefined' && window.location.hash.includes('type=recovery')) {
+      if (window.location.pathname !== '/reset-password') {
+        window.location.replace(`/reset-password${window.location.hash}`);
+        return;
+      }
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      if (event === 'PASSWORD_RECOVERY') {
+        if (typeof window !== 'undefined' && window.location.pathname !== '/reset-password') {
+          window.location.replace(`/reset-password${window.location.hash}`);
+        }
+      }
     });
 
     return () => subscription.unsubscribe();

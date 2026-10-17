@@ -23,6 +23,9 @@ function RootLayoutNav() {
     // Allow access to the design gallery without redirecting
     if (segments[0] === 'design') return;
 
+    // Allow user to complete password reset without being kicked out
+    if ((segments as string[]).includes('reset-password')) return;
+
     if (!session) {
       if (!inAuthGroup) {
         router.replace('/(auth)/welcome');

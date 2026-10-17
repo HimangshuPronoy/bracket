@@ -66,10 +66,17 @@ function ResetPasswordContent() {
         }
       }
 
-      // 3. Check active session
+      // 3. Check for access_token in hash
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+        if (mounted) {
+          setHasValidSession(true);
+        }
+      }
+
+      // 4. Check active session
       const { data: { session } } = await supabase.auth.getSession();
       if (mounted) {
-        if (session) {
+        if (session || (typeof window !== 'undefined' && window.location.hash.includes('access_token='))) {
           setHasValidSession(true);
         }
         setIsVerifying(false);

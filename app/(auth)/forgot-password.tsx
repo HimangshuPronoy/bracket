@@ -20,7 +20,11 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      const siteUrl = process.env.EXPO_PUBLIC_SITE_URL?.replace(/\/$/, '');
+      const redirectTo = siteUrl ? `${siteUrl}/reset-password` : 'bracket://reset-password';
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo,
+      });
 
       if (error) {
         Alert.alert('Error', error.message);
