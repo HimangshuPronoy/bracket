@@ -60,17 +60,31 @@ export default function RankingsView({ leaderboards }: Props) {
               }}
             >
               {/* Hero Image Header */}
-              <div style={{ position: 'relative', height: 180, width: '100%', overflow: 'hidden' }}>
-                <img 
-                  src={board.imageUrl} 
-                  alt={board.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                />
-                <div style={{ 
-                  position: 'absolute', 
-                  inset: 0, 
-                  background: 'rgba(7, 8, 14, 0.72)' 
-                }} />
+              <div style={{ 
+                position: 'relative', 
+                height: 140, 
+                width: '100%', 
+                overflow: 'hidden',
+                background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+                padding: '24px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-end'
+              }}>
+                {board.imageUrl ? (
+                  <>
+                    <img 
+                      src={board.imageUrl} 
+                      alt={board.title}
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                    <div style={{ 
+                      position: 'absolute', 
+                      inset: 0, 
+                      background: 'rgba(7, 8, 14, 0.72)' 
+                    }} />
+                  </>
+                ) : null}
                 
                 <div style={{ position: 'absolute', bottom: 16, left: 20, right: 20 }}>
                   <span style={{ 
@@ -89,7 +103,7 @@ export default function RankingsView({ leaderboards }: Props) {
               </div>
 
               {/* Players List Grid (Left: 1-4, Right: 5-7 + View All) */}
-              <div style={{ 
+              <div className="rankings-player-grid" style={{ 
                 display: 'grid', 
                 gridTemplateColumns: '1fr 1fr', 
                 padding: '20px', 

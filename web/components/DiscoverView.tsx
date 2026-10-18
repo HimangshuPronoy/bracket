@@ -222,12 +222,34 @@ export default function DiscoverView({ mappedTournaments }: Props) {
               )}
 
               {/* Framed Inset Image Banner */}
-              <div className="featured-hero-visual">
-                <img 
-                  src={featuredHeroTournament.imageUrl} 
-                  alt={featuredHeroTournament.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+              <div className="featured-hero-visual" style={{
+                background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                {featuredHeroTournament.imageUrl ? (
+                  <img 
+                    src={featuredHeroTournament.imageUrl} 
+                    alt={featuredHeroTournament.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 48 }}>{getGameEmoji(featuredHeroTournament.game)}</span>
+                    <span style={{ 
+                      fontSize: 13, 
+                      fontWeight: 700, 
+                      color: 'rgba(255,255,255,0.7)',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase'
+                    }}>
+                      {featuredHeroTournament.game}
+                    </span>
+                  </div>
+                )}
                 
                 {/* Floating Game Chip on Image */}
                 <div style={{ position: 'absolute', top: 12, left: 12 }}>
@@ -417,11 +439,24 @@ export default function DiscoverView({ mappedTournaments }: Props) {
                   onMouseEnter={() => setActiveAccordionIndex(idx)}
                   onClick={() => setActiveAccordionIndex(idx)}
                 >
-                  <img 
-                    src={t.imageUrl} 
-                    alt={t.name}
-                    className="cr7-img"
-                  />
+                  {t.imageUrl ? (
+                    <img 
+                      src={t.imageUrl} 
+                      alt={t.name}
+                      className="cr7-img"
+                    />
+                  ) : (
+                    <div className="cr7-img" style={{
+                      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8
+                    }}>
+                      <span style={{ fontSize: 36 }}>{getGameEmoji(t.game)}</span>
+                    </div>
+                  )}
                   
                   {/* Clean label for inactive card */}
                   <div className="cr7-inactive-tag">
@@ -609,16 +644,7 @@ export default function DiscoverView({ mappedTournaments }: Props) {
 
       {/* ── 6. Organizer Callout Card (Solid Surface, Zero Gradients) ── */}
       <section style={{ marginBottom: 60 }}>
-        <div style={{ 
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-xl)',
-          padding: '56px 48px',
-          display: 'grid',
-          gridTemplateColumns: '1.2fr 0.8fr',
-          gap: 48,
-          alignItems: 'center'
-        }}>
+        <div className="organizer-callout-box">
           <div>
             <div className="section-kicker" style={{ color: '#818CF8' }}>FOR TOURNAMENT DIRECTORS</div>
             <h2 className="text-display" style={{ fontSize: 36, marginBottom: 16 }}>
@@ -627,7 +653,7 @@ export default function DiscoverView({ mappedTournaments }: Props) {
             <p className="text-body" style={{ fontSize: 16, marginBottom: 32, maxWidth: 540 }}>
               Launch single elimination, double elimination, swiss, or round-robin brackets in minutes. Complete with automated seeding, station assignment, and real-time score updates.
             </p>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <div className="mobile-stack-buttons" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <Link href="/create" className="btn btn-primary btn-lg">
                 Create a Tournament Now →
               </Link>

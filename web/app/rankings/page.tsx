@@ -66,9 +66,7 @@ export default async function RankingsPage() {
       id: game.toLowerCase().replace(/\s+/g, '-'),
       title: `${game} Global`,
       subtitle: 'Current Standings',
-      imageUrl: index % 2 === 0 
-        ? 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop'
-        : 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop',
+      imageUrl: '',
       totalPlayers: players.length,
       players
     };

@@ -1130,17 +1130,31 @@ select.input option {
   padding: 20px;
 }
 
+/* ── Organizer Callout Box ─────────────────────────────── */
+.organizer-callout-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 56px 48px;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 48px;
+  align-items: center;
+}
+
 /* ── Responsive Behavior ───────────────────────────────── */
 .show-mobile { display: none !important; }
+.show-mobile-flex { display: none !important; }
+.mobile-bottom-nav { display: none; }
 
 @media (max-width: 1024px) {
   .hero-split-grid {
     grid-template-columns: 1fr;
-    gap: 40px;
-    padding: 32px 0 48px;
+    gap: 36px;
+    padding: 24px 0 40px;
   }
   .hero-headline {
-    font-size: 38px;
+    font-size: 40px;
   }
   .cr7-accordion-stage {
     flex-direction: column;
@@ -1155,20 +1169,264 @@ select.input option {
   }
   .apex-pipeline-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
   .ecosystem-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .organizer-callout-box {
+    grid-template-columns: 1fr;
+    padding: 40px 32px;
+    gap: 28px;
   }
 }
 
 @media (max-width: 900px) {
   .hide-mobile { display: none !important; }
-  .show-mobile { display: flex !important; }
-  .nav-header { height: 60px; }
-  .page-wrapper { padding-top: 110px; }
+  .show-mobile { display: block !important; }
+  .show-mobile-flex { display: flex !important; }
+  .nav-header { height: 60px; top: 36px; }
+  .nav-inner { padding: 0 16px; }
+  .page-wrapper { padding-top: 104px; }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+}
+
+@media (max-width: 768px) {
+  /* Containers & Spacing */
+  .container, .container-wide {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  .page-wrapper {
+    padding-top: 100px;
+    padding-bottom: 90px; /* Room for mobile bottom nav bar */
+  }
+
+  /* Native Mobile Bottom Navigation Bar */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 62px;
+    background: #FFFFFF;
+    border-top: 1px solid var(--border);
+    z-index: 150;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  }
+  .mobile-bottom-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: #64748B;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    flex: 1;
+    height: 100%;
+    transition: color 0.15s ease;
+    touch-action: manipulation;
+  }
+  .mobile-bottom-tab.active {
+    color: #0F172A;
+    font-weight: 750;
+  }
+  .mobile-bottom-tab.active svg {
+    stroke: #0F172A;
+    stroke-width: 2.5;
+  }
+  .mobile-bottom-fab {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #0F172A;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -6px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .mobile-bottom-tab.active .mobile-bottom-fab {
+    background: #2563EB;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  }
+
+  /* Mobile Dropdown Drawer */
+  .mobile-menu-drawer {
+    position: fixed;
+    top: 96px;
+    left: 0;
+    right: 0;
+    bottom: 62px;
+    background: #FFFFFF;
+    border-top: 1px solid var(--border);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    z-index: 140;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Form Elements - Prevent auto-zoom on iOS */
+  .input, select.input, textarea.input {
+    font-size: 16px !important;
+  }
+
+  /* Hero & Typography */
+  .hero-headline {
+    font-size: clamp(28px, 7.5vw, 36px);
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    margin-bottom: 14px;
+  }
+  .hero-subline {
+    font-size: 14.5px;
+    margin-bottom: 24px;
+  }
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .hero-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .hero-metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    text-align: center;
+    padding-top: 20px;
+  }
+  .hero-metric-num {
+    font-size: 20px;
+  }
+  .hero-metric-label {
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Carousels on Mobile */
+  .carousel-row {
+    padding: 0 16px 16px;
+    margin: 0 -16px;
+    scroll-padding: 16px;
+    gap: 14px;
+  }
+  .carousel-item {
+    min-width: 260px;
+    width: 82vw;
+    max-width: 310px;
+  }
+
+  /* Showcase Accordion on Mobile */
+  .cr7-accordion-stage {
+    flex-direction: column;
+    height: auto;
+    gap: 14px;
+  }
+  .cr7-column {
+    height: 240px;
+    border-radius: var(--radius-lg);
+  }
+  .cr7-column .cr7-overlay {
+    padding: 16px;
+    opacity: 1 !important;
+  }
+  .cr7-column .cr7-details-box {
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+  }
+  .cr7-column .cr7-inactive-tag {
+    display: none !important;
+  }
+  .cr7-details-box h3 {
+    font-size: 18px !important;
+    margin-bottom: 4px !important;
+  }
+  .cr7-details-box p {
+    font-size: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Detail Page Hero on Mobile */
+  .hero-banner {
+    height: auto;
+    min-height: 260px;
+    margin-top: -100px;
+    padding-top: 100px;
+    padding-bottom: 24px;
+  }
+  .header-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .hero-thumbnail {
+    width: 64px;
+    height: 64px;
+  }
+  .hero-banner-content .text-display-lg {
+    font-size: clamp(24px, 6.5vw, 32px);
+    line-height: 1.2;
+  }
+
+  /* Layout Sidebar & Sticky Elements */
+  .layout-sidebar {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .sticky-sidebar {
+    position: static;
+  }
+
+  /* Cards Padding */
+  .card-p32 { padding: 20px; }
+  .card-p24 { padding: 18px; }
+  .apex-step-card { padding: 24px 20px; }
+  .apex-numeral { margin-bottom: 14px; font-size: 36px; }
+
+  /* Organizer Callout Box on Mobile */
+  .organizer-callout-box {
+    grid-template-columns: 1fr;
+    padding: 28px 20px;
+    gap: 20px;
+  }
+  .organizer-callout-box h2 {
+    font-size: 26px !important;
+  }
+  .organizer-callout-box .mobile-stack-buttons {
+    flex-direction: column;
+  }
+  .organizer-callout-box .mobile-stack-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 640px) {
+  /* Grids Collapse to 1 Column */
+  .grid-2, .grid-3, .grid-auto {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  /* Featured Hero Card on Mobile */
   .featured-spec-grid {
     grid-template-columns: 1fr;
     gap: 8px;
@@ -1182,5 +1440,52 @@ select.input option {
   }
   .featured-tab-strip {
     padding: 8px 14px;
+  }
+
+  /* Ecosystem Grid on Mobile */
+  .ecosystem-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ecosystem-cell {
+    padding: 18px 10px;
+  }
+  .ecosystem-icon {
+    font-size: 26px;
+    margin-bottom: 6px;
+  }
+  .ecosystem-name {
+    font-size: 13px;
+  }
+  .ecosystem-genre {
+    font-size: 11px;
+  }
+
+  /* Rankings / Leaderboard Player List on Mobile */
+  .rankings-player-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Organizer Tournament Row on Mobile */
+  .organizer-tournament-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 16px !important;
+    gap: 14px !important;
+  }
+  .organizer-tournament-row .organizer-thumb {
+    width: 100% !important;
+    height: 140px !important;
+  }
+  .organizer-tournament-row .organizer-actions {
+    width: 100% !important;
+  }
+  .organizer-tournament-row .organizer-actions .flex {
+    width: 100% !important;
+  }
+  .organizer-tournament-row .organizer-actions .btn {
+    flex: 1 !important;
+    text-align: center !important;
+    justify-content: center !important;
   }
 }

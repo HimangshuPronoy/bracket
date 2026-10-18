@@ -157,15 +157,32 @@ export default function OrganizerDashboardPage() {
                     borderBottom: i !== myTournaments.length - 1 ? '1px solid var(--border)' : 'none',
                     gap: 24
                   }}
-                  className="hover-bg-elevated"
+                  className="organizer-tournament-row hover-bg-elevated"
                 >
-                  <img
-                    src={tItem.imageUrl}
-                    alt={tItem.name}
-                    style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 'var(--radius-md)' }}
-                  />
+                  {tItem.imageUrl ? (
+                    <img
+                      src={tItem.imageUrl}
+                      alt={tItem.name}
+                      className="organizer-thumb"
+                      style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 'var(--radius-md)' }}
+                    />
+                  ) : (
+                    <div className="organizer-thumb" style={{
+                      width: 120,
+                      height: 80,
+                      borderRadius: 'var(--radius-md)',
+                      background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)',
+                      border: '1px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 28
+                    }}>
+                      🎮
+                    </div>
+                  )}
 
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 200 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <h3 className="text-headline">{tItem.name}</h3>
                       <span className={`badge ${
@@ -185,7 +202,7 @@ export default function OrganizerDashboardPage() {
                     <p className="text-sm text-secondary mt-1">{tItem.isOnline ? '🌐 Online' : `📍 ${tItem.location}`}</p>
                   </div>
 
-                  <div className="flex-col gap-2">
+                  <div className="organizer-actions flex-col gap-2">
                     <div className="flex gap-2">
                       <Link
                         href={`/tournament/${tItem.id}`}

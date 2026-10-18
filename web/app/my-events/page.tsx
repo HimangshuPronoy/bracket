@@ -117,12 +117,26 @@ export default function MyEventsPage() {
               style={{ display: 'block', overflow: 'hidden', padding: 0 }}
             >
               {/* Thumbnail Header */}
-              <div style={{ position: 'relative', width: '100%', height: 160 }}>
-                <img
-                  src={tournament.imageUrl}
-                  alt={tournament.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+              <div style={{ position: 'relative', width: '100%', height: 160, background: '#F8FAFC' }}>
+                {tournament.imageUrl ? (
+                  <img
+                    src={tournament.imageUrl}
+                    alt={tournament.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)',
+                    fontSize: 36
+                  }}>
+                    🏆
+                  </div>
+                )}
                 <div style={{ position: 'absolute', top: 12, right: 12 }}>
                   <div style={{
                     padding: '4px 10px',

@@ -53,7 +53,7 @@ export default function Carousel({ title, tournaments, viewAllHref, kicker }: Pr
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {/* Circular Navigation Buttons */}
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8 }} className="hide-mobile">
             <button 
               onClick={() => scroll('left')}
               disabled={!canScrollLeft}

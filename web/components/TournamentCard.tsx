@@ -3,6 +3,17 @@
 import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
 
+const getGameEmoji = (game?: string) => {
+  const g = (game || '').toLowerCase();
+  if (g.includes('fighter') || g.includes('sf')) return '🥊';
+  if (g.includes('melee') || g.includes('smash')) return '⚔️';
+  if (g.includes('tekken')) return '⚡';
+  if (g.includes('valorant') || g.includes('strike') || g.includes('cs')) return '🎯';
+  if (g.includes('rocket')) return '🚗';
+  if (g.includes('mortal')) return '💀';
+  return '🏆';
+};
+
 interface Props {
   tournament: any;
 }
@@ -26,13 +37,37 @@ export default function TournamentCard({ tournament }: Props) {
       }}
     >
       {/* Thumbnail Container */}
-      <div style={{ position: 'relative', width: '100%', height: 180, overflow: 'hidden' }}>
-        <img
-          src={tournament.imageUrl}
-          alt={tournament.name}
-          className="card-thumbnail"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+      <div style={{ position: 'relative', width: '100%', height: 180, overflow: 'hidden', background: '#F8FAFC' }}>
+        {tournament.imageUrl ? (
+          <img
+            src={tournament.imageUrl}
+            alt={tournament.name}
+            className="card-thumbnail"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <div style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)',
+            gap: 8,
+          }}>
+            <span style={{ fontSize: 36 }}>{getGameEmoji(tournament.game)}</span>
+            <span style={{ 
+              fontSize: 12, 
+              fontWeight: 700, 
+              color: '#64748B', 
+              letterSpacing: '0.05em', 
+              textTransform: 'uppercase' 
+            }}>
+              {tournament.game || 'Tournament'}
+            </span>
+          </div>
+        )}
         
         {/* Border divider line instead of gradient */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, background: 'var(--border)' }} />
@@ -117,12 +152,14 @@ export default function TournamentCard({ tournament }: Props) {
         <div>
           {/* Game Tag & Icon Row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            {tournament.thumbnailUrl && (
+            {tournament.thumbnailUrl ? (
               <img 
                 src={tournament.thumbnailUrl} 
                 alt="Game thumbnail"
                 style={{ width: 24, height: 24, borderRadius: 6, objectFit: 'cover' }}
               />
+            ) : (
+              <span style={{ fontSize: 16 }}>{getGameEmoji(tournament.game)}</span>
             )}
             <span style={{ 
               fontSize: 12, 

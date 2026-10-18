@@ -85,16 +85,20 @@ export default async function TournamentPage({ params }: Props) {
   return (
     <main className="fade-in">
       {/* Hero Header */}
-      <div className="hero-banner">
-        <img 
-          src={tournament.imageUrl} 
-          alt={tournament.name} 
-          className="hero-banner-img"
-        />
-        <div className="hero-banner-overlay" />
+      <div className="hero-banner" style={{ background: tournament.imageUrl ? undefined : '#0F172A' }}>
+        {tournament.imageUrl && (
+          <>
+            <img 
+              src={tournament.imageUrl} 
+              alt={tournament.name} 
+              className="hero-banner-img"
+            />
+            <div className="hero-banner-overlay" />
+          </>
+        )}
         <div className="container hero-banner-content">
           <div className="header-flex">
-            {tournament.thumbnailUrl && !tournament.thumbnailUrl.includes('images.unsplash.com') && (
+            {tournament.thumbnailUrl && (
               <img 
                 src={tournament.thumbnailUrl} 
                 alt="Thumbnail"
@@ -148,11 +152,9 @@ export default async function TournamentPage({ params }: Props) {
             {tournament.videoUrl && (
               <div className="card mb-8 card-p0">
                 <iframe 
-                  width="100%" 
-                  height="400" 
                   src={tournament.videoUrl} 
                   title="Tournament Video"
-                  frameBorder="0" 
+                  style={{ width: '100%', aspectRatio: '16/9', height: 'auto', display: 'block', border: 'none' }}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                   allowFullScreen
                 />
