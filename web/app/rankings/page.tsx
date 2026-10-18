@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { supabase } from '@/lib/supabase';
+import { supabase, getGameBanner } from '@/lib/supabase';
 import RankingsView from '@/components/RankingsView';
 
 export const metadata: Metadata = {
@@ -66,7 +66,7 @@ export default async function RankingsPage() {
       id: game.toLowerCase().replace(/\s+/g, '-'),
       title: `${game} Global`,
       subtitle: 'Current Standings',
-      imageUrl: '',
+      imageUrl: getGameBanner(game),
       totalPlayers: players.length,
       players
     };
