@@ -8,10 +8,10 @@ import { createTournament } from '@/lib/api/tournament';
 import { useI18n } from '@/lib/i18n';
 
 const GAMES = [
-  'Super Fighter V', 'Smash Bros. Ultimate', 'Fighter Z',
-  'Tekken 8', 'Valorant', 'CS2', 'League of Legends',
-  'Rocket League', 'Dragon Ball FighterZ', 'Guilty Gear Strive',
-  'Street Fighter 6', 'Mortal Kombat 1', 'Other'
+  'Fortnite', 'Overwatch 2', 'Valorant', 'CS2',
+  'Super Smash Bros. Ultimate', 'Rocket League', 'League of Legends',
+  'Apex Legends', 'Street Fighter 6', 'Super Fighter V',
+  'Mortal Kombat 1', 'Other'
 ];
 
 const FORMATS = [

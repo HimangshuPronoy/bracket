@@ -27,11 +27,14 @@ export default function DiscoverView({ mappedTournaments }: Props) {
   ).slice(0, 8);
   
   const shooters = mappedTournaments.filter((t: any) => 
+    t.game?.toLowerCase().includes('fortnite') || 
+    t.game?.toLowerCase().includes('overwatch') || 
     t.game?.toLowerCase().includes('valorant') || 
     t.game?.toLowerCase().includes('strike') || 
     t.game?.toLowerCase().includes('shooter') || 
     t.game?.toLowerCase().includes('halo') || 
-    t.game?.toLowerCase().includes('cs2')
+    t.game?.toLowerCase().includes('cs2') ||
+    t.game?.toLowerCase().includes('apex')
   ).slice(0, 8);
 
   const otherGames = mappedTournaments.filter((t: any) => 
@@ -62,24 +65,26 @@ export default function DiscoverView({ mappedTournaments }: Props) {
 
   const getGameEmoji = (game?: string) => {
     const g = (game || '').toLowerCase();
+    if (g.includes('fortnite')) return '🪂';
+    if (g.includes('overwatch')) return '🛡️';
     if (g.includes('fighter') || g.includes('sf')) return '🥊';
     if (g.includes('melee') || g.includes('smash')) return '⚔️';
-    if (g.includes('tekken')) return '⚡';
     if (g.includes('valorant') || g.includes('strike') || g.includes('cs')) return '🎯';
     if (g.includes('rocket')) return '🚗';
-    if (g.includes('mortal')) return '💀';
+    if (g.includes('league') || g.includes('lol')) return '🧙';
+    if (g.includes('apex')) return '⚡';
     return '🏆';
   };
 
   const supportedGames = [
-    { name: 'Street Fighter 6', genre: 'Fighting', query: 'fighter', icon: '🥊' },
-    { name: 'Tekken 8', genre: 'Fighting', query: 'tekken', icon: '⚡' },
+    { name: 'Fortnite', genre: 'Battle Royale', query: 'fortnite', icon: '🪂' },
+    { name: 'Overwatch 2', genre: 'Hero Shooter', query: 'overwatch', icon: '🛡️' },
     { name: 'Valorant', genre: 'Tactical Shooter', query: 'valorant', icon: '🎯' },
-    { name: 'Super Smash Bros', genre: 'Platform Fighter', query: 'smash', icon: '⚔️' },
     { name: 'Counter-Strike 2', genre: 'Tactical FPS', query: 'cs2', icon: '💣' },
+    { name: 'Super Smash Bros', genre: 'Platform Fighter', query: 'smash', icon: '⚔️' },
     { name: 'Rocket League', genre: 'Vehicular Soccer', query: 'rocket', icon: '🚗' },
-    { name: 'Mortal Kombat 1', genre: 'Fighting', query: 'mortal', icon: '💀' },
-    { name: 'Dragon Ball FighterZ', genre: 'Anime Fighter', query: 'dragon', icon: '🌀' },
+    { name: 'League of Legends', genre: 'MOBA', query: 'league', icon: '🧙' },
+    { name: 'Apex Legends', genre: 'Battle Royale', query: 'apex', icon: '⚡' },
   ];
 
   return (

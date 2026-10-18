@@ -67,17 +67,18 @@ export default async function TournamentPage({ params }: Props) {
   }));
 
   const gameEmoji: Record<string, string> = {
-    'Super Fighter V': '🥊',
-    'Smash Bros. Ultimate': '⚔️',
-    'Bros. Ultimate': '⚔️',
-    'Fighter Z': '🌀',
-    'Tekken 8': '🥊',
-    'Valorant': '🔫',
-    'CS2': '🔫',
-    'League of Legends': '🧙',
+    'Fortnite': '🪂',
+    'Overwatch 2': '🛡️',
+    'Overwatch': '🛡️',
+    'Valorant': '🎯',
+    'CS2': '💣',
     'Rocket League': '🚗',
-    'Dragon Ball FighterZ': '🌀',
-    'Guilty Gear Strive': '⚔️',
+    'League of Legends': '🧙',
+    'Apex Legends': '⚡',
+    'Super Smash Bros. Ultimate': '⚔️',
+    'Smash Bros. Ultimate': '⚔️',
+    'Melee': '⚔️',
+    'Super Fighter V': '🥊',
     'Street Fighter 6': '🥊',
     'Mortal Kombat 1': '💀',
   };

@@ -5,12 +5,14 @@ import { useI18n } from '@/lib/i18n';
 
 const getGameEmoji = (game?: string) => {
   const g = (game || '').toLowerCase();
+  if (g.includes('fortnite')) return '🪂';
+  if (g.includes('overwatch')) return '🛡️';
   if (g.includes('fighter') || g.includes('sf')) return '🥊';
   if (g.includes('melee') || g.includes('smash')) return '⚔️';
-  if (g.includes('tekken')) return '⚡';
   if (g.includes('valorant') || g.includes('strike') || g.includes('cs')) return '🎯';
   if (g.includes('rocket')) return '🚗';
-  if (g.includes('mortal')) return '💀';
+  if (g.includes('league') || g.includes('lol')) return '🧙';
+  if (g.includes('apex')) return '⚡';
   return '🏆';
 };
 
