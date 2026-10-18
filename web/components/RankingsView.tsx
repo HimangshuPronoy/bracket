@@ -30,9 +30,10 @@ export default function RankingsView({ leaderboards }: Props) {
   return (
     <main className="container fade-in" style={{ paddingTop: 32, paddingBottom: 80 }}>
       
-      <div style={{ marginBottom: 32 }}>
-        <h1 className="text-display">{t('rankings.title')}</h1>
-        <p className="text-secondary text-body mt-2">{t('rankings.subtitle')}</p>
+      <div style={{ marginBottom: 40 }}>
+        <div className="section-kicker">GLOBAL CIRCUIT STANDINGS</div>
+        <h1 className="text-display" style={{ fontSize: 36 }}>{t('rankings.title')}</h1>
+        <p className="text-secondary text-body mt-2" style={{ fontSize: 16 }}>{t('rankings.subtitle')}</p>
       </div>
 
       {leaderboards.length === 0 ? (
@@ -45,91 +46,127 @@ export default function RankingsView({ leaderboards }: Props) {
         </div>
       ) : (
         <div className="grid-2">
-          {leaderboards.map(board => (
-            <div key={board.id} className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
-            
-            {/* Hero Image Header */}
-            <div style={{ position: 'relative', height: 180, width: '100%' }}>
-              <img 
-                src={board.imageUrl} 
-                alt={board.title}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-              />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 80%)' }} />
-              
-              <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
-                <h2 style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-                  {board.title}
-                </h2>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>
-                  {board.subtitle}
-                </p>
-              </div>
-            </div>
-
-            {/* Players List Grid (Left: 1-4, Right: 5-7 + View All) */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr', 
-              padding: 20, 
-              gap: 16,
-              background: 'var(--bg-surface)' 
-            }}>
-              
-              {/* Left Column (Ranks 1 to 4) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {board.players.slice(0, 4).map(p => (
-                  <div key={p.rank} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div style={{ fontSize: 14, color: p.rank === 1 ? '#FFD700' : p.rank === 2 ? '#C0C0C0' : p.rank === 3 ? '#CD7F32' : 'var(--text-muted)', width: 16, textAlign: 'right', fontWeight: 700 }}>
-                      {p.rank}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                        {p.name}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                        {p.wins} {t('rankings.wins')}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Right Column (Ranks 5 to 7 + View All) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {board.players.slice(4, 7).map(p => (
-                  <div key={p.rank} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div style={{ fontSize: 14, color: 'var(--text-muted)', width: 16, textAlign: 'right', fontWeight: 600 }}>
-                      {p.rank}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                        {p.name}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                        {p.wins} {t('rankings.wins')}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+          {leaderboards.map((board) => (
+            <div 
+              key={board.id} 
+              className="card" 
+              style={{ 
+                padding: 0, 
+                display: 'flex', 
+                flexDirection: 'column',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)'
+              }}
+            >
+              {/* Hero Image Header */}
+              <div style={{ position: 'relative', height: 180, width: '100%', overflow: 'hidden' }}>
+                <img 
+                  src={board.imageUrl} 
+                  alt={board.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
+                <div style={{ 
+                  position: 'absolute', 
+                  inset: 0, 
+                  background: 'rgba(7, 8, 14, 0.72)' 
+                }} />
                 
-                {/* View All Block */}
-                <div style={{ marginTop: 'auto', marginLeft: 28, paddingBottom: 4 }}>
-                  <Link href={`/rankings/${board.id}`} style={{ display: 'flex', flexDirection: 'column', textDecoration: 'none' }}>
-                    <span style={{ color: '#3B75DF', fontWeight: 600, fontSize: 15, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {t('home.viewAll')}
-                    </span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: 13, fontStyle: 'italic' }}>
-                      {board.totalPlayers}
-                    </span>
-                  </Link>
+                <div style={{ position: 'absolute', bottom: 16, left: 20, right: 20 }}>
+                  <span style={{ 
+                    fontSize: 11, 
+                    fontWeight: 700, 
+                    color: '#818CF8', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.08em' 
+                  }}>
+                    {board.subtitle}
+                  </span>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.2, margin: '2px 0 0' }}>
+                    {board.title}
+                  </h2>
                 </div>
               </div>
 
+              {/* Players List Grid (Left: 1-4, Right: 5-7 + View All) */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                padding: '20px', 
+                gap: 16,
+                background: 'var(--bg-surface)' 
+              }}>
+                {/* Left Column (Ranks 1 to 4) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {board.players.slice(0, 4).map((p) => {
+                    const medal = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `${p.rank}`;
+                    return (
+                      <div key={p.rank} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <div style={{ 
+                          fontSize: p.rank <= 3 ? 16 : 13, 
+                          color: p.rank === 1 ? '#D97706' : p.rank === 2 ? '#64748B' : p.rank === 3 ? '#EA580C' : 'var(--text-muted)', 
+                          width: 20, 
+                          textAlign: 'center', 
+                          fontWeight: 700 
+                        }}>
+                          {medal}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                            {p.name}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                            {p.wins} {t('rankings.wins')}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Right Column (Ranks 5 to 7 + View All) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {board.players.slice(4, 7).map((p) => (
+                    <div key={p.rank} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)', width: 20, textAlign: 'center', fontWeight: 600 }}>
+                        {p.rank}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                          {p.name}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                          {p.wins} {t('rankings.wins')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* View All Block */}
+                  <div style={{ marginTop: 'auto', paddingLeft: 32, paddingBottom: 4 }}>
+                    <Link 
+                      href={`/rankings/${board.id}`} 
+                      style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: 6,
+                        color: 'var(--accent)', 
+                        fontWeight: 700, 
+                        fontSize: 13,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em'
+                      }}
+                    >
+                      <span>{t('home.viewAll')}</span>
+                      <span>→</span>
+                    </Link>
+                  </div>
+                </div>
+
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
       )}
 
     </main>

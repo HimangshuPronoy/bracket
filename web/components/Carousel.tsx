@@ -9,9 +9,10 @@ interface Props {
   title: string;
   tournaments: any[];
   viewAllHref?: string;
+  kicker?: string;
 }
 
-export default function Carousel({ title, tournaments, viewAllHref }: Props) {
+export default function Carousel({ title, tournaments, viewAllHref, kicker }: Props) {
   const { t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -33,7 +34,7 @@ export default function Carousel({ title, tournaments, viewAllHref }: Props) {
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = 340 + 16; // card width + gap
+      const scrollAmount = 340 + 20; // card width + gap
       scrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -42,46 +43,85 @@ export default function Carousel({ title, tournaments, viewAllHref }: Props) {
   };
 
   return (
-    <section>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h2 className="text-title">{title}</h2>
+    <section style={{ marginBottom: 48 }}>
+      {/* Header Row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          {kicker && <div className="section-kicker">{kicker}</div>}
+          <h2 className="text-title" style={{ fontSize: 26 }}>{title}</h2>
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* Circular Navigation Buttons */}
           <div style={{ display: 'flex', gap: 8 }}>
             <button 
               onClick={() => scroll('left')}
               disabled={!canScrollLeft}
+              title="Previous"
               style={{ 
-                width: 32, height: 32, borderRadius: 'var(--radius-md)', 
-                background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: canScrollLeft ? 'pointer' : 'default', opacity: canScrollLeft ? 1 : 0.3
+                width: 36, 
+                height: 36, 
+                borderRadius: '50%', 
+                background: '#FFFFFF', 
+                border: '1px solid var(--border)', 
+                color: '#0F172A',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                cursor: canScrollLeft ? 'pointer' : 'default', 
+                opacity: canScrollLeft ? 1 : 0.3,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                transition: 'all 0.2s',
+                fontSize: 16
               }}
             >
-              ←
+              ‹
             </button>
             <button 
               onClick={() => scroll('right')}
               disabled={!canScrollRight}
+              title="Next"
               style={{ 
-                width: 32, height: 32, borderRadius: 'var(--radius-md)', 
-                background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: canScrollRight ? 'pointer' : 'default', opacity: canScrollRight ? 1 : 0.3
+                width: 36, 
+                height: 36, 
+                borderRadius: '50%', 
+                background: '#FFFFFF', 
+                border: '1px solid var(--border)', 
+                color: '#0F172A',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                cursor: canScrollRight ? 'pointer' : 'default', 
+                opacity: canScrollRight ? 1 : 0.3,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                transition: 'all 0.2s',
+                fontSize: 16
               }}
             >
-              →
+              ›
             </button>
           </div>
+
           <Link
             href={viewAllHref || '/search'}
-            style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600, textDecoration: 'none' }}
-            className="hover-text-primary"
+            style={{ 
+              fontSize: 12, 
+              color: 'var(--text-secondary)', 
+              fontWeight: 700, 
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4
+            }}
           >
             {t('home.viewAll')}
           </Link>
         </div>
       </div>
       
+      {/* Scrollable Container */}
       <div 
         ref={scrollRef}
         onScroll={checkScroll}

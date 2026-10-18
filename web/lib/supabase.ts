@@ -23,8 +23,25 @@ export type SupabaseTournament = {
   tags: string[];
 };
 
+export function getGameBanner(game?: string, customBanner?: string | null): string {
+  if (customBanner && customBanner.trim().length > 0) return customBanner;
+  const g = (game || '').toLowerCase();
+  if (g.includes('melee') || g.includes('smash') || g.includes('bros')) {
+    return '/images/tournaments/weekly_online_smash.jpg';
+  }
+  if (g.includes('fighter') || g.includes('sf') || g.includes('street')) {
+    return '/images/tournaments/local_legends.jpg';
+  }
+  if (g.includes('tekken') || g.includes('mortal') || g.includes('guilty')) {
+    return '/images/tournaments/pro_circuit.jpg';
+  }
+  return '/images/tournaments/neo_city_clash.jpg';
+}
+
 // Maps raw Supabase tournament → format expected by the UI
 export function mapTournament(t: SupabaseTournament) {
+  const banner = getGameBanner(t.game, t.banner_url);
+  const thumb = t.thumbnail_url || banner;
   return {
     id: t.id,
     name: t.name,
@@ -34,8 +51,8 @@ export function mapTournament(t: SupabaseTournament) {
     isOnline: t.is_online,
     registrationFee: t.registration_fee,
     prizePool: t.prize_pool,
-    imageUrl: t.banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2940&auto=format&fit=crop',
-    thumbnailUrl: t.thumbnail_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2940&auto=format&fit=crop',
+    imageUrl: banner,
+    thumbnailUrl: thumb,
     videoUrl: t.video_url,
     organizerName: '',
     descriptionMarkdown: t.description_md,

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { supabase } from '@/lib/supabase';
+import { supabase, getGameBanner } from '@/lib/supabase';
 import { TournamentSidebar } from '@/components/TournamentSidebar';
 import { TournamentEventsList } from '@/components/TournamentEventsList';
 import { ClientTournamentLoader } from '@/components/ClientTournamentLoader';
@@ -46,8 +46,8 @@ export default async function TournamentPage({ params }: Props) {
     registrationFee: rawTournament.registration_fee,
     tickets: rawTournament.tickets || [],
     prizePool: rawTournament.prize_pool,
-    imageUrl: rawTournament.banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2940&auto=format&fit=crop',
-    thumbnailUrl: rawTournament.thumbnail_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2940&auto=format&fit=crop',
+    imageUrl: getGameBanner(rawTournament.game, rawTournament.banner_url),
+    thumbnailUrl: rawTournament.thumbnail_url || getGameBanner(rawTournament.game, rawTournament.banner_url),
     organizerName: organizer?.display_name ?? organizer?.handle ?? 'Unknown Organizer',
     descriptionMarkdown: rawTournament.description_md,
     videoUrl: rawTournament.video_url ?? null,

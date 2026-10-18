@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { supabase } from '@/lib/supabase';
+import { supabase, getGameBanner } from '@/lib/supabase';
 import DiscoverView from '@/components/DiscoverView';
 
 export const metadata: Metadata = {
@@ -48,6 +48,7 @@ export default async function DiscoverPage() {
 
   const mappedTournaments = (rawTournaments || []).map((t: any) => {
     const org = profiles.find(p => p.id === t.organizer_id);
+    const banner = getGameBanner(t.game, t.banner_url);
     return {
       id: t.id,
       name: t.name,
@@ -58,8 +59,8 @@ export default async function DiscoverPage() {
       registrationFee: t.registration_fee,
       prizePool: t.prize_pool,
       entrantsCount: registrationCounts[t.id] ?? 0,
-      imageUrl: t.banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2940&auto=format&fit=crop',
-      thumbnailUrl: t.thumbnail_url || null,
+      imageUrl: banner,
+      thumbnailUrl: t.thumbnail_url || banner,
       organizerName: org?.display_name || org?.handle || 'Unknown Organizer',
       registrationOpen: t.status === 'registration_open',
     };

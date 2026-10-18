@@ -101,32 +101,21 @@ export default function ProfilePage() {
   return (
     <main className="fade-in" style={{ paddingBottom: 80, minHeight: '100vh', background: 'var(--bg)' }}>
       
-      {/* ── Premium Hero Header ── */}
-      <div style={{ position: 'relative', height: 280, width: '100%', overflow: 'hidden' }}>
-        {/* Dynamic Gradient Background */}
-        <div style={{ 
-          position: 'absolute', inset: 0, 
-          background: 'linear-gradient(135deg, #3B75DF 0%, #7C6EFA 50%, #E83F6F 100%)',
-          opacity: 0.85
-        }} />
-        {/* Glass Overlay */}
-        <div style={{ position: 'absolute', inset: 0, backdropFilter: 'blur(20px)', background: 'linear-gradient(to bottom, transparent, var(--bg))' }} />
-      </div>
+      {/* ── Premium Hero Header (Clean Light Off-White) ── */}
+      <div style={{ position: 'relative', height: 200, width: '100%', overflow: 'hidden', background: '#F8FAFC', borderBottom: '1px solid var(--border)' }} />
 
-      <div className="container" style={{ position: 'relative', marginTop: -120, zIndex: 10, maxWidth: 900 }}>
+      <div className="container" style={{ position: 'relative', marginTop: -90, zIndex: 10, maxWidth: 900 }}>
         
-        {/* Main Profile Card (Glassmorphism) */}
+        {/* Main Profile Card (Crisp Solid White) */}
         <div className="card" style={{ 
           padding: '40px', 
           display: 'flex', 
           alignItems: 'center', 
           gap: '40px', 
           marginBottom: '32px',
-          background: 'rgba(255, 255, 255, 0.03)',
-          backdropFilter: 'blur(40px)',
-          WebkitBackdropFilter: 'blur(40px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 24px 48px rgba(0,0,0,0.2)',
+          background: '#FFFFFF',
+          border: '1px solid var(--border)',
+          boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.08)',
           borderRadius: 'var(--radius-xl)'
         }}>
           {isEditing ? (
@@ -170,16 +159,13 @@ export default function ProfilePage() {
             </div>
           ) : (
             <>
-              {/* Avatar with Glow */}
+              {/* Avatar */}
               <div style={{ position: 'relative' }}>
                 <div style={{ 
-                  position: 'absolute', inset: -4, background: 'linear-gradient(135deg, #3B75DF, #E83F6F)', borderRadius: '50%', filter: 'blur(12px)', opacity: 0.6 
-                }} />
-                <div style={{ 
                   position: 'relative', width: 140, height: 140, borderRadius: '50%', 
-                  background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  fontSize: 56, overflow: 'hidden', border: '3px solid rgba(255,255,255,0.1)',
-                  boxShadow: 'var(--shadow-lg)'
+                  background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  fontSize: 56, overflow: 'hidden', border: '3px solid var(--border)',
+                  boxShadow: 'var(--shadow-sm)'
                 }}>
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -189,11 +175,11 @@ export default function ProfilePage() {
 
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
-                  <h1 className="text-display" style={{ fontSize: 42, letterSpacing: '-0.02em', margin: 0, textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                  <h1 className="text-display" style={{ fontSize: 38, letterSpacing: '-0.02em', margin: 0, color: 'var(--text)' }}>
                     {profile?.display_name || profile?.handle || 'Unknown Player'}
                   </h1>
                   {stats.golds > 0 && (
-                    <span className="badge" style={{ background: 'linear-gradient(90deg, #FFD700, #FDB931)', color: '#000', fontWeight: 800, padding: '6px 12px', fontSize: 13, boxShadow: '0 4px 12px rgba(255, 215, 0, 0.3)' }}>
+                    <span className="badge" style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', fontWeight: 700, padding: '4px 10px', fontSize: 12 }}>
                       CHAMPION
                     </span>
                   )}
@@ -225,31 +211,31 @@ export default function ProfilePage() {
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
               {/* Stat Card 1 */}
-              <div className="card-interactive" style={{ padding: 24, borderRadius: 'var(--radius-xl)', background: 'linear-gradient(to bottom right, var(--bg-surface), var(--bg))', border: '1px solid var(--border)' }}>
+              <div className="card-interactive" style={{ padding: 24, borderRadius: 'var(--radius-xl)', background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(59, 117, 223, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, fontSize: 20 }}>
                   🎫
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Tournaments Entered</div>
-                <div style={{ fontSize: 36, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--font-display)' }}>{stats.entered}</div>
+                <div style={{ fontSize: 36, fontWeight: 700, color: 'var(--text)' }}>{stats.entered}</div>
               </div>
 
               {/* Stat Card 2 */}
-              <div className="card-interactive" style={{ padding: 24, borderRadius: 'var(--radius-xl)', background: 'linear-gradient(to bottom right, var(--bg-surface), var(--bg))', border: '1px solid var(--border)' }}>
+              <div className="card-interactive" style={{ padding: 24, borderRadius: 'var(--radius-xl)', background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255, 215, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, fontSize: 20 }}>
                   🥇
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Gold Medals</div>
-                <div style={{ fontSize: 36, fontWeight: 800, color: '#FFD700', fontFamily: 'var(--font-display)', textShadow: '0 0 20px rgba(255, 215, 0, 0.3)' }}>{stats.golds}</div>
+                <div style={{ fontSize: 36, fontWeight: 700, color: '#F59E0B' }}>{stats.golds}</div>
               </div>
 
               {/* Stat Card 3 */}
-              <div className="card-interactive" style={{ padding: 24, borderRadius: 'var(--radius-xl)', background: 'linear-gradient(to bottom right, var(--bg-surface), var(--bg))', border: '1px solid var(--border)' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(50, 215, 75, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, fontSize: 20 }}>
+              <div className="card-interactive" style={{ padding: 24, borderRadius: 'var(--radius-xl)', background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, fontSize: 20 }}>
                   🔥
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Total Match Wins</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                  <div style={{ fontSize: 48, fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-display)', textShadow: '0 0 24px rgba(50, 215, 75, 0.3)' }}>{stats.totalWins}</div>
+                  <div style={{ fontSize: 48, fontWeight: 700, color: 'var(--success)' }}>{stats.totalWins}</div>
                 </div>
               </div>
             </div>

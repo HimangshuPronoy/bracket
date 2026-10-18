@@ -125,13 +125,13 @@ export default function MyEventsPage() {
                 />
                 <div style={{ position: 'absolute', top: 12, right: 12 }}>
                   <div style={{
-                    padding: '6px 12px',
-                    borderRadius: 16,
-                    background: 'rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.1)'
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-pill)',
+                    background: '#FFFFFF',
+                    border: '1px solid #E2E8F0',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>
+                    <span style={{ color: '#0F172A', fontSize: 11, fontWeight: 700 }}>
                       {tournament.date}
                     </span>
                   </div>
@@ -139,9 +139,11 @@ export default function MyEventsPage() {
                 {/* Status badge */}
                 <div style={{ position: 'absolute', top: 12, left: 12 }}>
                   <span style={{
-                    background: status === 'confirmed' ? 'var(--success)' : status === 'cancelled' ? 'var(--danger)' : '#3B75DF',
-                    color: status === 'confirmed' ? '#000' : '#fff',
-                    padding: '4px 10px', fontSize: 11, fontWeight: 700, borderRadius: 4
+                    background: status === 'confirmed' ? '#ECFDF5' : status === 'cancelled' ? '#FEF2F2' : '#EFF6FF',
+                    color: status === 'confirmed' ? '#059669' : status === 'cancelled' ? '#DC2626' : '#2563EB',
+                    border: `1px solid ${status === 'confirmed' ? '#A7F3D0' : status === 'cancelled' ? '#FECACA' : '#BFDBFE'}`,
+                    padding: '4px 10px', fontSize: 11, fontWeight: 700, borderRadius: 'var(--radius-pill)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
                   }}>
                     {status === 'confirmed' ? '✓ Confirmed' : status === 'cancelled' ? '✕ Cancelled' : status?.toUpperCase() ?? 'REGISTERED'}
                   </span>
