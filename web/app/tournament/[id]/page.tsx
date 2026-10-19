@@ -6,6 +6,7 @@ import { TournamentSidebar } from '@/components/TournamentSidebar';
 import { TournamentEventsList } from '@/components/TournamentEventsList';
 import { ClientTournamentLoader } from '@/components/ClientTournamentLoader';
 import { TournamentQuickInfo } from '@/components/TournamentQuickInfo';
+import { TournamentVideoEmbed } from '@/components/TournamentVideoEmbed';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -151,15 +152,7 @@ export default async function TournamentPage({ params }: Props) {
 
             {/* Video Embed */}
             {tournament.videoUrl && (
-              <div className="card mb-8 card-p0">
-                <iframe 
-                  src={tournament.videoUrl} 
-                  title="Tournament Video"
-                  style={{ width: '100%', aspectRatio: '16/9', height: 'auto', display: 'block', border: 'none' }}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                />
-              </div>
+              <TournamentVideoEmbed videoUrl={tournament.videoUrl} />
             )}
 
             {/* Events */}

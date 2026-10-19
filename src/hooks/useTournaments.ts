@@ -15,6 +15,7 @@ import {
   getOrganizerStats,
 } from '../lib/services/tournament.service';
 import type { Tournament, TournamentWithEvents, TournamentInsert, TournamentUpdate } from '../lib/database.types';
+import { getEmbedVideoUrl } from '../lib/video';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const tournamentKeys = {
@@ -112,7 +113,7 @@ export function useCreateTournament() {
         description_md: input.descriptionMd ?? null,
         banner_url: input.bannerUrl ?? null,
         thumbnail_url: input.thumbnailUrl ?? null,
-        video_url: input.videoUrl ?? null,
+        video_url: input.videoUrl ? (getEmbedVideoUrl(input.videoUrl) || input.videoUrl) : null,
         tags: input.tags ?? [],
         status: 'registration_open',
       };

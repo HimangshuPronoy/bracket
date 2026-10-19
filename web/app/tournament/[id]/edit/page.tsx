@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabase, getEmbedVideoUrl } from '@/lib/supabase';
 import { deleteTournament, deleteEvent } from '@/lib/api/tournament';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -193,7 +193,7 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
           prize_pool: prizePool || null,
           banner_url: uploadedBannerUrl || null,
           thumbnail_url: uploadedThumbnailUrl || null,
-          video_url: videoUrl || null,
+          video_url: getEmbedVideoUrl(videoUrl) || (videoUrl ? videoUrl.trim() : null),
           description_md: description || null,
           status,
         })
@@ -513,12 +513,15 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
               </div>
 
               <div className="input-group mb-4">
-                <label className="input-label">Video URL (YouTube/Twitch)</label>
+                <label className="input-label">Video URL (YouTube/Twitch/Vimeo)</label>
                 <input
                   type="url" className="input"
-                  placeholder="https://youtube.com/watch?v=..."
+                  placeholder="https://youtube.com/watch?v=... or https://youtu.be/..."
                   value={videoUrl} onChange={e => setVideoUrl(e.target.value)}
                 />
+                <span className="text-secondary" style={{ fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  Paste any YouTube link (watch, youtu.be, shorts, live), Twitch stream, or Vimeo URL.
+                </span>
               </div>
 
               <div className="input-group">

@@ -10,6 +10,7 @@ import { WebView } from 'react-native-webview';
 import { useTournament } from '../../../src/hooks/useTournaments';
 import { useRegistrationForTournament, useCancelRegistration } from '../../../src/hooks/useRegistrations';
 import { useAuth } from '../../../src/features/auth/AuthContext';
+import { getEmbedVideoUrl } from '../../../src/lib/video';
 
 const { width } = Dimensions.get('window');
 
@@ -242,7 +243,7 @@ export default function TournamentDetailsScreen() {
               {tournament.video_url && (
                 <View style={[styles.videoContainer, { backgroundColor: '#000', borderRadius: radii.card, overflow: 'hidden' }]}>
                   <WebView
-                    source={{ uri: tournament.video_url }}
+                    source={{ uri: getEmbedVideoUrl(tournament.video_url) || tournament.video_url }}
                     style={{ flex: 1 }}
                     allowsFullscreenVideo
                     javaScriptEnabled

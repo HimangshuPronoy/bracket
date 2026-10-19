@@ -343,12 +343,15 @@ export default function CreateEventPage() {
             </div>
 
             <div className="input-group">
-              <label className="input-label">Video URL (YouTube/Twitch)</label>
+              <label className="input-label">Video URL (YouTube/Twitch/Vimeo)</label>
               <input
                 type="url" className="input"
-                placeholder="https://youtube.com/watch?v=..."
+                placeholder="https://youtube.com/watch?v=... or https://youtu.be/..."
                 value={videoUrl} onChange={e => setVideoUrl(e.target.value)}
               />
+              <span className="text-secondary" style={{ fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                Paste any YouTube link (watch, youtu.be, shorts, live), Twitch stream, or Vimeo URL.
+              </span>
             </div>
 
             <div className="input-group">

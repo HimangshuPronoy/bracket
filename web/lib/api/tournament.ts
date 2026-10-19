@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, getEmbedVideoUrl } from '@/lib/supabase';
 
 export interface TicketData { name: string; price: string; }
 export interface EventData { name: string; format: string; maxEntrants: string; }
@@ -84,7 +84,7 @@ export async function createTournament(params: CreateTournamentParams) {
       prize_pool: prizePool || null,
       banner_url: uploadedBannerUrl || null,
       thumbnail_url: uploadedThumbnailUrl || null,
-      video_url: videoUrl || null,
+      video_url: getEmbedVideoUrl(videoUrl) || (videoUrl ? videoUrl.trim() : null),
       description_md: description || null,
       tags: isOnline ? ['Online'] : ['In-Person'],
       status: 'registration_open',

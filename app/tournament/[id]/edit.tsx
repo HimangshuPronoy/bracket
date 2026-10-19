@@ -14,6 +14,7 @@ import { useAuth } from '../../../src/features/auth/AuthContext';
 import { useTournament, useUpdateTournament } from '../../../src/hooks/useTournaments';
 import { deleteTournament } from '../../../src/lib/services/tournament.service';
 import { deleteEvent } from '../../../src/lib/services/event.service';
+import { getEmbedVideoUrl } from '../../../src/lib/video';
 
 export default function EditTournamentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -181,7 +182,7 @@ export default function EditTournamentScreen() {
           prize_pool: prizePool || null,
           banner_url: finalBannerUrl,
           thumbnail_url: finalThumbnailUrl,
-          video_url: videoUrl || null,
+          video_url: getEmbedVideoUrl(videoUrl) || (videoUrl ? videoUrl.trim() : null),
           description_md: description || null,
         }
       });
