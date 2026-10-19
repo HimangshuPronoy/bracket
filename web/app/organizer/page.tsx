@@ -13,6 +13,7 @@ export default function OrganizerDashboardPage() {
   const { t } = useI18n();
   const router = useRouter();
   const [myTournaments, setMyTournaments] = useState<MappedTournament[]>([]);
+  const [eventsMap, setEventsMap] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ registrations: 0, revenue: 0 });
 
@@ -51,6 +52,8 @@ export default function OrganizerDashboardPage() {
 
         if (tournaments.length > 0) {
           const ids = tournaments.map(t => t.id);
+
+          // Fetch confirmed registrations & revenue
           const { data: regRows } = await supabase
             .from('registrations')
             .select('tournament_id')
@@ -65,6 +68,20 @@ export default function OrganizerDashboardPage() {
             registrations: regCount,
             revenue: totalRevenue,
           });
+
+          // Fetch events for each tournament to show direct Manage Bracket shortcuts
+          const { data: evRows } = await supabase
+            .from('events')
+            .select('id, tournament_id, name, format, status, entrants_count')
+            .in('tournament_id', ids)
+            .order('created_at', { ascending: true });
+
+          const evGroup: Record<string, any[]> = {};
+          (evRows || []).forEach(e => {
+            if (!evGroup[e.tournament_id]) evGroup[e.tournament_id] = [];
+            evGroup[e.tournament_id].push(e);
+          });
+          setEventsMap(evGroup);
         }
         setLoading(false);
       });
@@ -201,6 +218,37 @@ export default function OrganizerDashboardPage() {
                     </div>
                     <p className="text-sm text-secondary">{tItem.date} • {tItem.game}</p>
                     <p className="text-sm text-secondary mt-1">{tItem.isOnline ? '🌐 Online' : `📍 ${tItem.location}`}</p>
+
+                    {/* Quick Access to Event Brackets */}
+                    {eventsMap[tItem.id] && eventsMap[tItem.id].length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+                        {eventsMap[tItem.id].map(ev => (
+                          <Link
+                            key={ev.id}
+                            href={`/tournament/${tItem.id}/event/${ev.id}/manage`}
+                            className="btn btn-sm"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              background: '#F8FAFC',
+                              border: '1px solid #CBD5E1',
+                              color: 'var(--text)',
+                              fontSize: 12,
+                              fontWeight: 650,
+                              padding: '5px 12px',
+                              borderRadius: 'var(--radius-sm)',
+                              textDecoration: 'none',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <span>⚔️</span>
+                            <span>{ev.name}</span>
+                            <span style={{ color: 'var(--accent)', fontWeight: 700 }}>Manage Bracket →</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="organizer-actions flex-col gap-2">
