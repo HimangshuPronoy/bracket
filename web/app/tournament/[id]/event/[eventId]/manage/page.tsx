@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { deleteEvent } from '@/lib/api/tournament';
 import { useAuth } from '@/lib/AuthContext';
 import { generateSingleElim, generateDoubleElim, generateRoundRobin } from '@/lib/bracket';
 import type { Entrant, StageState } from '@/lib/bracket';
@@ -145,11 +146,7 @@ export default function ManageBracketPage({ params }: Props) {
   const handleDeleteEvent = async () => {
     if (!window.confirm(`Are you sure you want to permanently delete event "${event?.name}"? All brackets and matches for this event will be deleted.`)) return;
     try {
-      const { error: delErr } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', eventId);
-      if (delErr) throw delErr;
+      await deleteEvent(eventId);
       router.push(`/tournament/${id}`);
     } catch (err: any) {
       alert(`Failed to delete event: ${err.message}`);

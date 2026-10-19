@@ -163,6 +163,17 @@ export async function updateTournament(id: string, updates: TournamentUpdate): P
 }
 
 export async function deleteTournament(id: string): Promise<void> {
+  // 1. Delete registrations first to prevent foreign key trigger conflicts during event cascade
+  await supabase.from('registrations').delete().eq('tournament_id', id);
+
+  // 2. Delete rankings and matches
+  await supabase.from('rankings').delete().eq('tournament_id', id);
+  await supabase.from('matches').delete().eq('tournament_id', id);
+
+  // 3. Delete events
+  await supabase.from('events').delete().eq('tournament_id', id);
+
+  // 4. Delete the tournament record
   const { error } = await supabase.from('tournaments').delete().eq('id', id);
   if (error) throw error;
 }

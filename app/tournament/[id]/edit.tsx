@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuth } from '../../../src/features/auth/AuthContext';
 import { useTournament, useUpdateTournament } from '../../../src/hooks/useTournaments';
+import { deleteTournament } from '../../../src/lib/services/tournament.service';
 import { deleteEvent } from '../../../src/lib/services/event.service';
 
 export default function EditTournamentScreen() {
@@ -69,8 +70,7 @@ export default function EditTournamentScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const { error } = await supabase.from('tournaments').delete().eq('id', tournament?.id ?? id);
-              if (error) throw error;
+              await deleteTournament(tournament?.id ?? id);
               router.replace('/(tabs)/organizer');
             } catch (e: any) {
               Alert.alert('Error', e.message);

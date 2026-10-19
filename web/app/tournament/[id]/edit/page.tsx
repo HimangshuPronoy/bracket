@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { deleteTournament, deleteEvent } from '@/lib/api/tournament';
 import { useAuth } from '@/lib/AuthContext';
 
 const GAMES = [
@@ -241,8 +242,7 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
   const handleDeleteExistingEvent = async (evId: string, evName: string) => {
     if (!window.confirm(`Are you sure you want to delete event "${evName}"? This will permanently remove the event, its bracket, and entrants.`)) return;
     try {
-      const { error: delErr } = await supabase.from('events').delete().eq('id', evId);
-      if (delErr) throw delErr;
+      await deleteEvent(evId);
       setExistingEvents(prev => prev.filter(e => e.id !== evId));
     } catch (err: any) {
       alert(`Failed to delete event: ${err.message}`);
@@ -252,8 +252,7 @@ export default function EditTournamentPage({ params }: { params: Promise<{ id: s
   const handleDeleteTournament = async () => {
     if (!window.confirm(`Are you sure you want to permanently delete "${name}"? This action CANNOT be undone and will delete all events, matches, and registrations.`)) return;
     try {
-      const { error: delErr } = await supabase.from('tournaments').delete().eq('id', id);
-      if (delErr) throw delErr;
+      await deleteTournament(id);
       router.push('/organizer');
     } catch (err: any) {
       alert(`Failed to delete tournament: ${err.message}`);

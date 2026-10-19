@@ -115,3 +115,36 @@ export async function createTournament(params: CreateTournamentParams) {
 
   return tournament;
 }
+
+export async function deleteTournament(tournamentId: string): Promise<void> {
+  // 1. Delete all attendee registrations first to avoid foreign-key update conflicts during event cascade
+  const { error: regErr } = await supabase.from('registrations').delete().eq('tournament_id', tournamentId);
+  if (regErr) {
+    console.warn('Error deleting registrations before tournament delete:', regErr.message);
+  }
+
+  // 2. Delete rankings and matches
+  await supabase.from('rankings').delete().eq('tournament_id', tournamentId);
+  await supabase.from('matches').delete().eq('tournament_id', tournamentId);
+
+  // 3. Delete events
+  await supabase.from('events').delete().eq('tournament_id', tournamentId);
+
+  // 4. Finally delete the tournament record
+  const { error } = await supabase.from('tournaments').delete().eq('id', tournamentId);
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function deleteEvent(eventId: string): Promise<void> {
+  // 1. Delete rankings and matches referencing this event
+  await supabase.from('rankings').delete().eq('event_id', eventId);
+  await supabase.from('matches').delete().eq('event_id', eventId);
+
+  // 2. Delete the event record (database trigger will clean up registrations)
+  const { error } = await supabase.from('events').delete().eq('id', eventId);
+  if (error) {
+    throw new Error(error.message);
+  }
+}

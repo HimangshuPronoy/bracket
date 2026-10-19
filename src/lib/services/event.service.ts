@@ -58,6 +58,8 @@ export async function updateEvent(eventId: string, updates: EventUpdate): Promis
 }
 
 export async function deleteEvent(eventId: string): Promise<void> {
+  await supabase.from('rankings').delete().eq('event_id', eventId);
+  await supabase.from('matches').delete().eq('event_id', eventId);
   const { error } = await supabase.from('events').delete().eq('id', eventId);
   if (error) throw error;
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase, mapTournament, type MappedTournament } from '@/lib/supabase';
+import { deleteTournament } from '@/lib/api/tournament';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
@@ -24,11 +25,11 @@ export default function OrganizerDashboardPage() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to permanently delete tournament "${name}"? This action cannot be undone.`)) return;
-    const { error } = await supabase.from('tournaments').delete().eq('id', id);
-    if (error) {
-      alert(`Failed to delete tournament: ${error.message}`);
-    } else {
+    try {
+      await deleteTournament(id);
       setMyTournaments(prev => prev.filter(t => t.id !== id));
+    } catch (error: any) {
+      alert(`Failed to delete tournament: ${error.message}`);
     }
   };
 
