@@ -21,6 +21,9 @@ export default function OrganizerDashboardPage() {
     const { error } = await supabase.from('tournaments').update({ status: 'registration_open' }).eq('id', id);
     if (!error) {
       setMyTournaments(prev => prev.map(t => t.id === id ? { ...t, status: 'registration_open', registrationOpen: true } : t));
+    } else {
+      // Bug #10 fix: surface publish errors instead of swallowing them silently
+      alert(`Failed to publish tournament: ${error.message}`);
     }
   };
 
@@ -152,10 +155,11 @@ export default function OrganizerDashboardPage() {
                 <div className="text-display" style={{ fontSize: 40, color: 'var(--success)' }}>{stats.registrations}</div>
               </div>
               <div className="card" style={{ padding: 20 }}>
-                <div className="text-sm text-secondary mb-2" style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gross Revenue</div>
+                <div className="text-sm text-secondary mb-2" style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gross Revenue <span style={{ fontWeight: 400, fontSize: 10, textTransform: 'none' }}>(est.)</span></div>
                 <div className="text-display" style={{ fontSize: 40, color: 'var(--success)' }}>
                   ${stats.revenue.toFixed(0)}
                 </div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Based on flat registration fee × confirmed signups. Tiered ticket revenue may differ.</div>
               </div>
             </div>
           </section>

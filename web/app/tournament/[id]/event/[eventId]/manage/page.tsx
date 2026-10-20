@@ -59,7 +59,7 @@ const getGameEmoji = (game?: string) => {
 
 export default function ManageBracketPage({ params }: Props) {
   const { id, eventId } = use(params);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [tournament, setTournament] = useState<any>(null);
@@ -91,6 +91,10 @@ export default function ManageBracketPage({ params }: Props) {
   const [stageState, setStageState] = useState<StageState | null>(null);
 
   useEffect(() => {
+    // Bug #7 fix: wait for auth to resolve before fetching — prevents
+    // the brief "Access Denied" flash shown to the real organizer.
+    if (authLoading) return;
+
     async function load() {
       const { data: tData } = await supabase.from('tournaments').select('*').eq('id', id).single();
       const { data: eData } = await supabase.from('events').select('*').eq('id', eventId).single();
@@ -177,12 +181,35 @@ export default function ManageBracketPage({ params }: Props) {
     }
 
     load();
-  }, [id, eventId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, eventId, authLoading]);
 
-  // Persist manual entrants & stations state to event.stage_data
+  // Persist manual entrants & stations state to event.stage_data.
+  // Bug #5 fix: when bracket is already generated we must NOT overwrite
+  // the live stage_data, but we still need to save check-in state for
+  // walk-in entrants.  We do this by merging into the existing stage object.
   const persistDraftState = async (updatedEntrants: ManagedEntrant[], updatedStations = stations) => {
-    if (bracketGenerated) return; // Do not overwrite active bracket
     try {
+      if (bracketGenerated) {
+        // Only persist walk-in check-in state inside the existing stage_data
+        const walkInStates = updatedEntrants
+          .filter(e => e.isWalkIn)
+          .map(e => ({ id: e.id, name: e.name, checkedIn: e.checkedIn }));
+        if (walkInStates.length === 0) return;
+        // Merge walk-in check-ins into stage_data without touching matches
+        const { data: fresh } = await supabase
+          .from('events')
+          .select('stage_data')
+          .eq('id', eventId)
+          .single();
+        if (!fresh?.stage_data) return;
+        const merged = {
+          ...(fresh.stage_data as any),
+          walkin_checkins: walkInStates,
+        };
+        await supabase.from('events').update({ stage_data: merged }).eq('id', eventId);
+        return;
+      }
       await supabase
         .from('events')
         .update({
@@ -434,6 +461,15 @@ export default function ManageBracketPage({ params }: Props) {
       setStatusMsg({ text: 'At least 2 entrants are required to generate a bracket.', type: 'error' });
       return;
     }
+    // Bug #1 fix: Swiss format has no engine implementation — show a clear error
+    // instead of silently falling through to single elimination.
+    if (selectedFormat === 'swiss') {
+      setStatusMsg({
+        text: '⚠️ Swiss format is not yet supported. Please select Single Elimination, Double Elimination, or Round Robin.',
+        type: 'error',
+      });
+      return;
+    }
     setSaving(true);
     setStatusMsg(null);
 
@@ -488,6 +524,9 @@ export default function ManageBracketPage({ params }: Props) {
   const handleResetBracket = async () => {
     if (!window.confirm('⚠️ This will erase the current bracket, match scores, and standings. Are you sure?')) return;
     setSaving(true);
+    // Bug #3 fix: also clear stale rankings so re-running the bracket
+    // doesn't upsert on top of old placement rows.
+    await supabase.from('rankings').delete().eq('event_id', eventId);
     await supabase.from('events').update({ stage_data: null, status: 'registration_open' }).eq('id', eventId);
     setBracketGenerated(false);
     setStageState(null);

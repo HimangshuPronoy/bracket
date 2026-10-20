@@ -237,7 +237,7 @@ export default function RegisterPage({ params }: Props) {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, marginBottom: 3 }}>{event.name}</div>
                   <div className="text-sm text-secondary">
-                    👥 {event.entrant_count ?? event.entrants_count ?? 0} entrants &nbsp;•&nbsp; {event.format.replace('_', ' ')}
+                    👥 {event.entrants_count ?? 0} entrants &nbsp;•&nbsp; {event.format.replace('_', ' ')}
                   </div>
                 </div>
                 <div className="checkbox-mark">{selected ? '✓' : ''}</div>

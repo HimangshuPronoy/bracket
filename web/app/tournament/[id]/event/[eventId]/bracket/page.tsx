@@ -24,6 +24,10 @@ export default function BracketPage({ params }: Props) {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<BracketTab>('winners');
+  // Bug #8 fix: flexible score entry state
+  const [customScoreMode, setCustomScoreMode] = useState(false);
+  const [customScoreA, setCustomScoreA] = useState(0);
+  const [customScoreB, setCustomScoreB] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -167,6 +171,9 @@ export default function BracketPage({ params }: Props) {
 
   const handleMatchClick = (match: Match) => {
     if (match.status === 'pending') return;
+    setCustomScoreMode(false);
+    setCustomScoreA(0);
+    setCustomScoreB(0);
     setSelectedMatch(match);
   };
 
@@ -499,40 +506,119 @@ export default function BracketPage({ params }: Props) {
               {selectedMatch.status === 'completed' ? 'Match Result' : 'Report Score'}
             </div>
 
-            <div className="score-reporter">
-              {/* Player A */}
-              <div className="player-col">
-                <div className="player-name">{getName(selectedMatch.entrantA)}</div>
-                {selectedMatch.status !== 'completed' ? (
-                  <>
-                    <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleReport(2, 0)}>Win 2–0</button>
-                    <button className="btn btn-secondary" style={{ width: '100%' }} onClick={() => handleReport(2, 1)}>Win 2–1</button>
-                  </>
-                ) : (
+            {selectedMatch.status !== 'completed' ? (
+              <>
+                {/* Quick-pick rows */}
+                {!customScoreMode && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 2 }}>Best of 3</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <button className="btn btn-primary btn-sm" onClick={() => handleReport(2, 0)}>
+                        {getName(selectedMatch.entrantA)} 2–0
+                      </button>
+                      <button className="btn btn-primary btn-sm" onClick={() => handleReport(0, 2)}>
+                        {getName(selectedMatch.entrantB)} 2–0
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleReport(2, 1)}>
+                        {getName(selectedMatch.entrantA)} 2–1
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleReport(1, 2)}>
+                        {getName(selectedMatch.entrantB)} 2–1
+                      </button>
+                    </div>
+
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginTop: 8, marginBottom: 2 }}>Best of 5</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleReport(3, 0)}>
+                        {getName(selectedMatch.entrantA)} 3–0
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleReport(0, 3)}>
+                        {getName(selectedMatch.entrantB)} 3–0
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleReport(3, 1)}>
+                        {getName(selectedMatch.entrantA)} 3–1
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleReport(1, 3)}>
+                        {getName(selectedMatch.entrantB)} 3–1
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleReport(3, 2)}>
+                        {getName(selectedMatch.entrantA)} 3–2
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleReport(2, 3)}>
+                        {getName(selectedMatch.entrantB)} 3–2
+                      </button>
+                    </div>
+
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ marginTop: 4 }}
+                      onClick={() => setCustomScoreMode(true)}
+                    >
+                      ✏️ Enter Custom Score
+                    </button>
+                  </div>
+                )}
+
+                {/* Custom score entry */}
+                {customScoreMode && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 12, alignItems: 'center' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getName(selectedMatch.entrantA)}</div>
+                        <input
+                          type="number"
+                          min={0}
+                          max={99}
+                          value={customScoreA}
+                          onChange={e => setCustomScoreA(Math.max(0, parseInt(e.target.value) || 0))}
+                          style={{ width: '100%', textAlign: 'center', fontSize: 28, fontWeight: 700, border: '2px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '8px 4px', background: 'var(--bg-elevated)' }}
+                        />
+                      </div>
+                      <div style={{ fontWeight: 700, color: 'var(--text-muted)' }}>vs</div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getName(selectedMatch.entrantB)}</div>
+                        <input
+                          type="number"
+                          min={0}
+                          max={99}
+                          value={customScoreB}
+                          onChange={e => setCustomScoreB(Math.max(0, parseInt(e.target.value) || 0))}
+                          style={{ width: '100%', textAlign: 'center', fontSize: 28, fontWeight: 700, border: '2px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '8px 4px', background: 'var(--bg-elevated)' }}
+                        />
+                      </div>
+                    </div>
+                    {customScoreA === customScoreB && (
+                      <p style={{ fontSize: 12, color: 'var(--warning)', textAlign: 'center' }}>Scores are tied — one player must have a higher score to determine a winner.</p>
+                    )}
+                    <button
+                      className="btn btn-primary"
+                      disabled={customScoreA === customScoreB}
+                      onClick={() => handleReport(customScoreA, customScoreB)}
+                    >
+                      Confirm Score
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setCustomScoreMode(false)}>← Back to Quick Pick</button>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Completed match display */
+              <div className="score-reporter">
+                <div className="player-col">
+                  <div className="player-name">{getName(selectedMatch.entrantA)}</div>
                   <div style={{ fontSize: 32, fontWeight: 800, color: selectedMatch.winnerId === selectedMatch.entrantA ? 'var(--success)' : 'var(--text-muted)' }}>
                     {selectedMatch.scoreA}
                   </div>
-                )}
-              </div>
-
-              {/* VS */}
-              <div className="vs-divider">VS</div>
-
-              {/* Player B */}
-              <div className="player-col">
-                <div className="player-name">{getName(selectedMatch.entrantB)}</div>
-                {selectedMatch.status !== 'completed' ? (
-                  <>
-                    <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleReport(0, 2)}>Win 2–0</button>
-                    <button className="btn btn-secondary" style={{ width: '100%' }} onClick={() => handleReport(1, 2)}>Win 2–1</button>
-                  </>
-                ) : (
+                </div>
+                <div className="vs-divider">VS</div>
+                <div className="player-col">
+                  <div className="player-name">{getName(selectedMatch.entrantB)}</div>
                   <div style={{ fontSize: 32, fontWeight: 800, color: selectedMatch.winnerId === selectedMatch.entrantB ? 'var(--success)' : 'var(--text-muted)' }}>
                     {selectedMatch.scoreB}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
 
             {selectedMatch.status === 'completed' && (
               <div style={{ marginTop: 24 }}>
